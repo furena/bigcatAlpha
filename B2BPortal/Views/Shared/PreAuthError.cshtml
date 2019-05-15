@@ -1,4 +1,5 @@
-﻿@using B2BPortal.Infrastructure
+﻿@using AzureB2BInvite
+
 @{
     ViewBag.Title = "PreAuthError";
 }
@@ -8,6 +9,6 @@
     Sorry, you still appear to be authenticated using the "Pre-Auth" credentials from your home tenant.
 </p>
 <p>
-    To manage your guest profile in the @Settings.InvitingOrganization organization,
+    To manage your guest profile in the @Settings.CurrSiteConfig.InvitingOrg organization,
     please @Html.ActionLink("logout", "Signout", "Account") to continue.
 </p>

@@ -1,4 +1,6 @@
-﻿using Microsoft.Graph;
+﻿using AzureB2BInvite.AuthCache;
+using B2BPortal.Common.Models;
+using Microsoft.Graph;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using System;
 using System.Collections.Generic;
@@ -12,10 +14,24 @@ namespace AzureB2BInvite
     public class GraphUtil
     {
         private GraphServiceClient _client;
+        private CacheUser _user;
 
-        public GraphUtil()
+        public GraphServiceClient Client {
+            get {
+                return _client;            
+            }
+        }
+
+        public GraphUtil(CacheUser user = null)
         {
-            AuthenticationResult authResult = AdalUtil.AuthenticateApp().Result;
+            _user = user;
+            AuthenticationResult authResult=null;
+            // Get auth token
+            var task = Task.Run(async () => {
+                authResult = await AdalUtil.AuthenticateApp(null, user);
+            });
+            task.Wait();
+
             string accessToken = authResult.AccessToken;
 
             _client = new GraphServiceClient(
@@ -32,12 +48,14 @@ namespace AzureB2BInvite
            return await (_client.Users[upn]).Request().GetAsync();
         }
 
-        public async Task<IEnumerable<Group>> GetGroups()
+        public async Task<IEnumerable<GroupObject>> GetGroups()
         {
-            return await (_client.Groups).Request().OrderBy("displayName").GetAsync();
+            var res = await (_client.Groups).Request().OrderBy("displayName").GetAsync();
+            IEnumerable<GroupObject> groups = res.Select(g => new GroupObject(g.DisplayName, g.Id)).ToList();
+            return groups;
         }
 
-        public async Task<IEnumerable<Group>> GetGroups(string filter)
+        public async Task<IEnumerable<GroupObject>> GetGroups(string filter)
         {
             if (filter == null)
             {
@@ -45,7 +63,8 @@ namespace AzureB2BInvite
             }
             var s = string.Format("startswith(displayName,'{0}')", filter);
             var res = await (_client.Groups).Request().Filter(s).GetAsync();
-            return res;
+            IEnumerable<GroupObject> groups = res.Select(g => new GroupObject(g.DisplayName, g.Id)).ToList();
+            return groups;
         }
 
         public async Task<User> SetUser(User user)

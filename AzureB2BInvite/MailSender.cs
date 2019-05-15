@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Mail;
 using System.Security.Cryptography.X509Certificates;
@@ -10,12 +11,18 @@ namespace AzureB2BInvite
         public static string MailServer { get; set; }
         public static int MailServerPort { get; set; }
         public static string MailFrom { get; set; }
-        public static string LogoPath { get; set; }
+        public static byte[] Logo { get; set; }
         public static string MailTemplate { get; set; }
         public static bool MailEnabled { get; set; }
         public static string SMTPLogin { get; set; }
         public static string SMTPPassword { get; set; }
         public static X509Certificate2 MailCert { get; set; }
+
+        public static string GetTemplateContents(string templateName)
+        {
+            var filePath = Path.Combine(Settings.AppRootPath, @"Templates\" + templateName);
+            return File.ReadAllText(filePath);
+        }
 
         public static void SendMessage(MailMessage msg)
         {
@@ -80,13 +87,13 @@ namespace AzureB2BInvite
                 }
                 if (sendAsHtml)
                 {
-                    if (LogoPath.Length > 0 && formattedBody.IndexOf("cid:") > 0)
+                    if (Logo !=null && Logo.Length > 0 && formattedBody.IndexOf("cid:") > 0)
                     {
-
-                        var oRes = new LinkedResource(LogoPath, System.Web.MimeMapping.GetMimeMapping(LogoPath));
-                        var iname = System.IO.Path.GetFileName(LogoPath);
-                        oRes.ContentId = iname;
-                        formattedBody = formattedBody.Replace("cid:", "cid:" + iname);
+                        var oRes = new LinkedResource(new MemoryStream(Logo), "image/png")
+                        {
+                            ContentId = "logo.png"
+                        };
+                        formattedBody = formattedBody.Replace("cid:", "cid:logo.png");
                         var oView = AlternateView.CreateAlternateViewFromString(formattedBody, new System.Net.Mime.ContentType("text/html"));
                         oView.LinkedResources.Add(oRes);
                         msg.AlternateViews.Add(oView);

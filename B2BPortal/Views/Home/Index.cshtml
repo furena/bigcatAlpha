@@ -1,5 +1,6 @@
-﻿@using B2BPortal.Infrastructure
-@using System.Security.Claims
+﻿@using System.Security.Claims
+@using B2BPortal.Common.Utils
+@using B2BPortal.Common.Helpers
 @using AzureB2BInvite
 
 @{
@@ -8,77 +9,90 @@
     bool PreAuthed = false;
     //pick up the form pre-fills - if the user has PreAuthed via the multi-tenant app
     if (User.Identity.IsAuthenticated || (Utils.GetClaim(CustomClaimTypes.AuthType) == AuthTypes.B2EMulti))
-        {
-            Email = (Utils.GetClaim(ClaimTypes.Email)) == null ? Utils.GetClaim(ClaimTypes.Name) : Utils.GetClaim(ClaimTypes.Email);
-            FirstName = Utils.GetClaim(ClaimTypes.GivenName);
-            LastName = Utils.GetClaim(ClaimTypes.Surname);
-            PreAuthed = true;
-        }
+    {
+        Email = (Utils.GetClaim(ClaimTypes.Email)) == null ? Utils.GetClaim(ClaimTypes.Name) : Utils.GetClaim(ClaimTypes.Email);
+        FirstName = Utils.GetClaim(ClaimTypes.GivenName);
+        LastName = Utils.GetClaim(ClaimTypes.Surname);
+        PreAuthed = true;
+    }
     var requirePreauth = Settings.CurrSiteConfig.SiteRedemptionSettings.RequirePreauth;
     var requireTOS = Settings.CurrSiteConfig.RequireTOSAgreement;
-    var btnDisabled = ((!(requirePreauth && PreAuthed)) && (!requireTOS)) ? "" : "disabled";
+
+    var btnDisabled = "";
+    if (requireTOS || (requirePreauth && (!PreAuthed)))
+    {
+        btnDisabled = "disabled";
+    }
 }
-<h3>@ViewBag.Title</h3>
-<div class="row">
-    <div class="col-sm-5">
-        @using (Html.BeginForm("SignUp", "Profile", FormMethod.Post))
-        {
-            <input type="hidden" name="PreAuthed" value="@PreAuthed.ToString().ToLower()" />
 
-            <div class="form-group">
-                <label for="EmailAddress">
-                    Email Address
-                </label>
-                <input class="form-control" type="text" value="@Email" id="EmailAddress" name="EmailAddress" placeholder="Email">
-            </div>
-            <div class="form-group">
-                <label for="FirstName">
-                    First Name
-                </label>
-                <input class="form-control" value="@FirstName" type="text" id="FirstName" name="FirstName" placeholder="First Name">
-            </div>
-            <div class="form-group">
-                <label for="LastName">
-                    Last Name
-                </label>
-                <input class="form-control" value="@LastName" type="text" id="LastName" name="LastName" placeholder="Last Name">
-            </div>
-            <div class="form-group">
-                <label for="Comment">
-                    Request Comment
-                </label>
-                <input class="form-control" type="text" id="Comment" name="Comment" placeholder="Add optional comment...">
-            </div>
-            if (PreAuthed)
-            {
-                <div class="form-group">
-                    <label for="PreAuthed">
-                        Pre-Authenticated
-                    </label>
-                    <img src="~/Content/images/CheckYes.png" />
-                </div>
-            }
-            if (Settings.CurrSiteConfig.RequireTOSAgreement)
-            {
-                <div class="form-group">
-                    <label for="TOSAgreed" style="padding-top:4px;">
-                        Agree with our @Html.ActionLink("Terms of Service", "TOS", "Home", new { area = "" }, new { target = "_blank" })?
-                    </label>
-                    <input type="checkbox" id="TOSAgreed" name="TOSAgreed">
-                </div>
-            }
-
-            <div class="form-group buttons">
-                <button id="btnSubmit" @btnDisabled class="btn btn-primary btn-default" type="submit">Request Access</button>
-                <div id="needPreauth" class="alert alert-warning hidden" role="alert">Pre-authorization is still required.</div>
-            </div>
-        }
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        @ViewBag.Title
     </div>
-    <div class="col-sm-7">
-        <p class="well">@Html.Raw(Settings.CurrSiteConfig.WelcomeMessage.Replace(Environment.NewLine, "<br/>"))</p>
+    <div class="panel-body">
+        <div class="row">
+            <div class="col-sm-5">
+                @using (Html.BeginForm("SignUp", "Profile", FormMethod.Post))
+                {
+                    <input type="hidden" name="PreAuthed" value="@PreAuthed.ToString().ToLower()" />
 
-        @if (Settings.CurrSiteConfig.SiteRedemptionSettings.RequirePreauth)
-        {
+                    <div class="form-group">
+                        <label for="EmailAddress">
+                            Email Address
+                        </label>
+                        <input class="form-control" type="text" value="@Email" id="EmailAddress" name="EmailAddress" placeholder="email@example.com">
+                        <div id="LookupNotify"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="FirstName">
+                            First Name
+                        </label>
+                        <input class="form-control" value="@FirstName" type="text" id="FirstName" name="FirstName" placeholder="First Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="LastName">
+                            Last Name
+                        </label>
+                        <input class="form-control" value="@LastName" type="text" id="LastName" name="LastName" placeholder="Last Name">
+                    </div>
+                    <div class="form-group">
+                        <label for="Comment">
+                            Request Comment
+                        </label>
+                        <input class="form-control" type="text" id="Comment" name="Comment" placeholder="Add optional comment...">
+                    </div>
+                    if (PreAuthed)
+                    {
+                        <div class="form-group">
+                            <label for="PreAuthed">
+                                Pre-Authenticated
+                            </label>
+                            <img src="~/Content/images/CheckYes.png" />
+                        </div>
+                    }
+                    if (Settings.CurrSiteConfig.RequireTOSAgreement)
+                    {
+                        <div class="form-group">
+                            <label for="TOSAgreed" style="padding-top:4px;">
+                                Agree with our @Html.ActionLink("Terms of Service", "TOS", "Home", new { area = "" }, new { target = "_blank" })?
+                            </label>
+                            <input type="checkbox" id="TOSAgreed" name="TOSAgreed">
+                        </div>
+                    }
+
+                    <div class="form-group buttons">
+                        <button id="btnSubmit" @btnDisabled class="btn btn-primary btn-default" type="submit">Request Access</button>
+                        <div id="needPreauth" class="alert alert-warning hidden" role="alert">Pre-authorization is still required.</div>
+                    </div>
+                }
+            </div>
+            <div class="col-sm-7">
+                <p class="well">
+                    @Html.Raw(Settings.CurrSiteConfig.WelcomeMessage.Replace(Environment.NewLine, "<br/>"))
+                </p>
+
+                @if (Settings.CurrSiteConfig.SiteRedemptionSettings.RequirePreauth)
+    {
             <blockquote style="font-size:.9em;">
                 <b>Note:</b>
                 <p>
@@ -95,9 +109,12 @@
                 </p>
             </blockquote>
             <div id="noPreAuth" class="alert alert-danger hidden" role="alert">Sorry, you don't appear to be authorized for registration at this time.</div>
-        }
+}
+            </div>
+        </div>
     </div>
 </div>
+
 @section styles {
     <style type="text/css">
         div.buttons button {
@@ -108,50 +125,75 @@
         #TOSAgreed {
             margin: 12px;
         }
+        #LookupNotify {
+            text-align: right; 
+            font-size: 0.8em; 
+            font-style: italic; 
+            margin-bottom: -16px; 
+            display: none;
+        }
     </style>
 }
 @section scripts {
     <script type="text/javascript">
-        $(function () {
-            $("#btnPreAuth").on("click", function () {
-                location.href = '/Account/SignInWorkMulti?user=' + $("#EmailAddress").val();
-                return false;
-            });
-            $("#TOSAgreed").on("click", function () {
-                if ($("#TOSAgreed")[0].checked) {
-                    @{
-                            if ((!requirePreauth) || (requirePreauth && PreAuthed))
-                            {
-                                @:$("#btnSubmit").removeAttr("disabled");
-                                                }
-                            if ((requirePreauth && !PreAuthed))
-                            {
-                                @:$("#needPreauth").removeClass("hidden");
-                            }
-                        }
-                    needPreauth
-                } else {
-                    $("#btnSubmit").attr("disabled", "true");
-                }
-            });
-            $("#EmailAddress").on("blur", function () {
-                var email = $("#EmailAddress").val();
-                if (!SiteUtil.IsValidEmailAddress(email)) return;
-
-                var data = { Email: email }
-                SiteUtil.AjaxCall("/api/PreAuth/CheckDomain", data, function (redirect) {
-                    if (redirect) {
-                        location.href = '/Account/SignInWorkMulti?user=' + $("#EmailAddress").val();
-                    } else {
-                        @{
-                            if (requirePreauth)
-                            {
-                                @:$("#noPreAuth").removeClass("hidden");
-                            }
-                         }
+$(function () {
+    $("#btnPreAuth").on("click", function () {
+        location.href = '/Account/SignInWorkMulti?user=' + $("#EmailAddress").val();
+        return false;
+    });
+    $("#TOSAgreed").on("click", function () {
+        if ($("#TOSAgreed")[0].checked) {
+            @{
+                    if ((!requirePreauth) || (requirePreauth && PreAuthed))
+                    {
+                        @:$("#btnSubmit").removeAttr("disabled");
+                                        }
+                    if ((requirePreauth && !PreAuthed))
+                    {
+                        @:$("#needPreauth").removeClass("hidden");
                     }
-                }, "POST");
-            });
-        });
+                }
+        } else {
+            $("#btnSubmit").attr("disabled", "true");
+        }
+    });
+    $(document.forms[0]).on("submit", function () {
+        var email = $("#EmailAddress").val();
+        if (!SiteUtil.IsValidEmailAddress(email)) {
+            alert("Sorry, the email address you entered is invalid.");
+            $("#EmailAddress").select().focus();
+            return false;
+        }
+
+    });
+    $("#EmailAddress").on("blur", function (e) {
+        var email = $("#EmailAddress").val();
+        $("#LookupNotify").html("Validating...").css({ display: "block" });
+        if (!SiteUtil.IsValidEmailAddress(email)) {
+            alert("The email address doesn't appear valid. Please confirm.");
+            $("#LookupNotify").html("").css({ display: "none" });
+            e.preventDefault();
+            return false;
+        }
+
+        var data = { Email: email }
+        SiteUtil.AjaxCall("/api/PreAuth/CheckDomain", data, function (redirect) {
+            if (redirect) {
+                $("#LookupNotify").html("Authenticating...");
+                setTimeout(function () {
+                    location.href = '/Account/SignInWorkMulti?user=' + $("#EmailAddress").val();
+                }, 10);
+            } else {
+                $("#LookupNotify").html("").css({ display: "none" });
+                @{
+                    if (requirePreauth)
+                    {
+                        @:$("#noPreAuth").removeClass("hidden");
+                    }
+                    }
+            }
+        }, "POST");
+    });
+});
     </script>
 }

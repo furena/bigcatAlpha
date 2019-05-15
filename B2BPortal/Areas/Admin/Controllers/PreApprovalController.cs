@@ -2,15 +2,16 @@
 using B2BPortal.Data;
 using B2BPortal.Infrastructure.Filters;
 using B2BPortal.Infrastructure;
-using B2BPortal.Models;
 using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using AzureB2BInvite;
+using AzureB2BInvite.Utils;
 using Microsoft.Graph;
 using System.IdentityModel.Claims;
+using B2BPortal.Common.Models;
 
 namespace B2BPortal.Areas.Admin.Controllers
 {
@@ -18,39 +19,33 @@ namespace B2BPortal.Areas.Admin.Controllers
     public class PreApprovalController : AsyncController
     {
         private List<InviteTemplate> _templates;
-        private List<Group> _groups;
 
         public PreApprovalController()
         {
             var task = Task.Run(async () => {
                 _templates = (await TemplateUtilities.GetTemplates()).ToList();
-                _groups = (await new GraphUtil().GetGroups()).ToList();
             });
             task.Wait();
         }
         private IEnumerable<SelectListItem> GetTemplates(string templateId)
         {
             var res = new List<SelectListItem>();
-            if (templateId != null)
-            {
-                res.AddRange(_templates.Select(t => new SelectListItem { Selected = (t.Id == templateId), Text = t.TemplateName, Value = t.Id }));
-            }
-            return res;
-        }
-
-        private IEnumerable<SelectListItem> GetGroups(IEnumerable<string> groupIds)
-        {
-            var res = new List<SelectListItem>();
-            if (groupIds != null)
-            {
-                res.AddRange(_groups.Select(g => new SelectListItem { Selected = (groupIds.Any(i => i == g.Id)), Text = g.DisplayName, Value = g.Id }));
-            }
+            res.AddRange(_templates.Select(t => new SelectListItem { Selected = ((templateId==null) ? (t.TemplateName == "Default") : (t.Id == templateId)), Text = t.TemplateName, Value = t.Id }));
             return res;
         }
 
         public async Task<ActionResult> Index()
         {
-            IEnumerable<PreAuthDomain> domains = await PreAuthDomain.GetDomains();
+            IEnumerable<PreAuthDomain> domains = null;
+            try
+            {
+                domains = await PreAuthDomain.GetDomains();
+            }
+            catch (Exception)
+            {
+                //see if this domain needs the group object updated
+                domains = await PreAuthDomain.RefreshAllPreAuthGroupData();
+            }
             return View(domains);
         }
 
@@ -58,7 +53,6 @@ namespace B2BPortal.Areas.Admin.Controllers
         public async Task<ActionResult> Create(PreAuthDomain domain)
         {
             ViewBag.Templates = GetTemplates(domain.InviteTemplateId);
-            ViewBag.Groups = GetGroups(domain.Groups);
 
             if (ModelState.IsValid)
             {
@@ -84,8 +78,7 @@ namespace B2BPortal.Areas.Admin.Controllers
             {
                 ViewBag.Operation = "Create";
                 domain = new PreAuthDomain();
-                //set default redirect URL
-                domain.DomainRedemptionSettings.InviteRedirectUrl = string.Format("https://myapps.microsoft.com/{0}", AdalUtil.Settings.Tenant);
+                domain.DomainRedemptionSettings.InviteRedirectUrl = string.Format("https://myapps.microsoft.com/{0}", Settings.Tenant);
                 domain.DomainRedemptionSettings.InviterResponseEmailAddr = User.Identity.GetClaim(ClaimTypes.Email);
             }
             else
@@ -95,7 +88,6 @@ namespace B2BPortal.Areas.Admin.Controllers
             }
 
             ViewBag.Templates = GetTemplates(domain.InviteTemplateId);
-            ViewBag.Groups = GetGroups(domain.Groups);
             return View(domain);
         }
 
@@ -103,7 +95,6 @@ namespace B2BPortal.Areas.Admin.Controllers
         public async Task<ActionResult> Edit(PreAuthDomain domain)
         {
             ViewBag.Templates = GetTemplates(domain.InviteTemplateId);
-            ViewBag.Groups = GetGroups(domain.Groups);
 
             if (ModelState.IsValid)
             {

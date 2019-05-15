@@ -2,46 +2,52 @@
     ViewBag.Title = "About This Site";
     ViewBag.Message = "Self-Service B2B Collaboration";
 }
-<h2>@ViewBag.Message</h2>
 
-<p>
-    This is a demonstration self-service enrollment portal for Azure Active Directory B2C
-    collaboration. The intent is to provide a basic implementation, using Microsoft Graph APIs
-    and other Azure tools, of bulk business partner self-enrollment for SaaS application collaboration.
-</p>
-<p>
-    The following links provide additional information on the implementation:
-    <ul class="doclinks">
-        <li>
-            <div>This open-source application on GitHub</div>
-            <a href="https://github.com/Azure/active-directory-dotnet-graphapi-b2bportal-web">https://github.com/Azure/active-directory-dotnet-graphapi-b2bportal-web</a>
-        </li>
-        <li>
-            <div>Azure Active Directory B2B Collaboration</div>
-            <a href="https://docs.microsoft.com/en-us/azure/active-directory/active-directory-b2b-what-is-azure-ad-b2b">https://docs.microsoft.com/en-us/azure/active-directory/active-directory-b2b-what-is-azure-ad-b2b</a>
-        </li>
-        <li>
-            <div>Microsoft Graph - B2B Invitations</div>
-            <a href="https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/invitation_post">https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/invitation_post</a>
-        </li>
-        <li>
-            <div>Azure Active Directory line-of-business application development</div>
-            <a href="https://docs.microsoft.com/en-us/azure/active-directory/active-directory-applications-guiding-developers-for-lob-applications">https://docs.microsoft.com/en-us/azure/active-directory/active-directory-applications-guiding-developers-for-lob-applications</a>
-        </li>
-        <li>
-            <div>Azure App Services</div>
-            <a href="https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-overview">https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-overview</a>
-        </li>
-        <li>
-            <div>Azure DocumentDB</div>
-            <a href="https://docs.microsoft.com/en-us/azure/documentdb/">https://docs.microsoft.com/en-us/azure/documentdb/</a>
-        </li>
-        <li>
-            <div>Azure Resource Manager</div>
-            <a href="https://docs.microsoft.com/en-us/azure/Azure-Resource-Manager/resource-group-overview">https://docs.microsoft.com/en-us/azure/Azure-Resource-Manager/resource-group-overview</a>
-        </li>
-    </ul>
-</p>
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        @ViewBag.Message
+    </div>
+    <div class="panel-body">
+        <p>
+            This is a demonstration self-service enrollment portal for Azure Active Directory B2C
+            collaboration. The intent is to provide a basic implementation, using Microsoft Graph APIs
+            and other Azure tools, of bulk business partner self-enrollment for SaaS application collaboration.
+        </p>
+        <p>
+            The following links provide additional information on the implementation:
+            <ul class="doclinks">
+                <li>
+                    <div>This open-source application on GitHub</div>
+                    <a href="https://github.com/Azure/active-directory-dotnet-graphapi-b2bportal-web">https://github.com/Azure/active-directory-dotnet-graphapi-b2bportal-web</a>
+                </li>
+                <li>
+                    <div>Azure Active Directory B2B Collaboration</div>
+                    <a href="https://docs.microsoft.com/en-us/azure/active-directory/active-directory-b2b-what-is-azure-ad-b2b">https://docs.microsoft.com/en-us/azure/active-directory/active-directory-b2b-what-is-azure-ad-b2b</a>
+                </li>
+                <li>
+                    <div>Microsoft Graph - B2B Invitations</div>
+                    <a href="https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/invitation_post">https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/api/invitation_post</a>
+                </li>
+                <li>
+                    <div>Azure Active Directory line-of-business application development</div>
+                    <a href="https://docs.microsoft.com/en-us/azure/active-directory/active-directory-applications-guiding-developers-for-lob-applications">https://docs.microsoft.com/en-us/azure/active-directory/active-directory-applications-guiding-developers-for-lob-applications</a>
+                </li>
+                <li>
+                    <div>Azure App Services</div>
+                    <a href="https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-overview">https://docs.microsoft.com/en-us/azure/app-service-web/app-service-web-overview</a>
+                </li>
+                <li>
+                    <div>Azure DocumentDB</div>
+                    <a href="https://docs.microsoft.com/en-us/azure/documentdb/">https://docs.microsoft.com/en-us/azure/documentdb/</a>
+                </li>
+                <li>
+                    <div>Azure Resource Manager</div>
+                    <a href="https://docs.microsoft.com/en-us/azure/Azure-Resource-Manager/resource-group-overview">https://docs.microsoft.com/en-us/azure/Azure-Resource-Manager/resource-group-overview</a>
+                </li>
+            </ul>
+        </p>
+    </div>
+</div>
 
 @section styles {
     <style type="text/css">

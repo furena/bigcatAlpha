@@ -1,5 +1,5 @@
 ﻿using B2BPortal.Data;
-using B2BPortal.Interfaces;
+using B2BPortal.Common.Interfaces;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
@@ -8,16 +8,23 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using B2BPortal.Data.Models;
+using B2BPortal.Common.Enums;
+using B2BPortal.Common.Models;
+using System.Web.Mvc;
+using AzureB2BInvite.Utils;
+using Newtonsoft.Json.Linq;
 
 namespace AzureB2BInvite.Models
 {
+    [ModelBinder(typeof(PreAuthDomainModelBinder))]
     public class PreAuthDomain: DocModelBase, IDocModelBase
     {
         public PreAuthDomain()
         {
             DomainRedemptionSettings = new RedemptionSettings();
             InviteTemplateContent = new InviteTemplate();
-            Groups = new List<string>();
+            Groups = new List<GroupObject>();
         }
         /// <summary>
         /// The UPN of the user creating this PreAuth record
@@ -87,7 +94,7 @@ namespace AzureB2BInvite.Models
         /// </summary>
         [JsonProperty(PropertyName = "groups")]
         [DisplayName("Group Assignments")]
-        public List<string> Groups { get; set; }
+        public List<GroupObject> Groups { get; set; }
 
         [JsonIgnore]
         [ScaffoldColumn(false)]
@@ -110,7 +117,7 @@ namespace AzureB2BInvite.Models
         }
         public static async Task<PreAuthDomain> GetDomainByName(string domainName)
         {
-            var res = (await DocDBRepo.DB<PreAuthDomain>.GetItemsAsync(d => d.DomainName == domainName)).SingleOrDefault();
+            var res = (await DocDBRepo.DB<PreAuthDomain>.GetItemsAsync(d => d.DomainName.ToLower() == domainName.ToLower())).SingleOrDefault();
             if (res == null) return null;
 
             if (res.InviteTemplateId != null)
@@ -140,10 +147,40 @@ namespace AzureB2BInvite.Models
         {
             return (await DocDBRepo.DB<PreAuthDomain>.DeleteItemAsync(domain));
         }
-    }
-    public enum MemberType
-    {
-        Guest,
-        Member
+
+        /// <summary>
+        /// This method cleans up any existing domain records from the first version. That version stored an array of strings with
+        /// the group id in each. The current version stores each group as a GroupObject with the name and id. This will retrieve the ids
+        /// and update with the new object.
+        /// </summary>
+        /// <returns></returns>
+        public static async Task<IEnumerable<PreAuthDomain>> RefreshAllPreAuthGroupData()
+        {
+            var groups = await new GraphUtil().GetGroups(null);
+            dynamic domains = await DocDBRepo.DB<PreAuthDomain>.GetAllItemsGenericAsync();
+            foreach (var domain in domains)
+            {
+                List<dynamic> gl = ((domain as dynamic).groups as JArray).ToList<dynamic>();
+                if (JsonConvert.SerializeObject(gl).IndexOf("groupName") == -1)
+                {
+                    //needs updated
+                    for (var i = 0; i < gl.Count; i++)
+                    {
+                        string id = gl[i];
+                        var newG = groups.SingleOrDefault(g => g.GroupId == id);
+                        if (newG != null)
+                        {
+                            gl.Remove(gl[i]);
+                            gl.Insert(i, newG);
+                        }
+                    }
+                    (domain as dynamic).groups = gl;
+
+                    var newDomain = JsonConvert.DeserializeObject<PreAuthDomain>(JsonConvert.SerializeObject(domain));
+                    await DocDBRepo.DB<PreAuthDomain>.UpdateItemAsync(newDomain);
+                }
+            }
+            return await GetDomains();
+        }
     }
 }

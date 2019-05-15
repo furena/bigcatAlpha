@@ -7,6 +7,10 @@ using Microsoft.Owin.Security.Cookies;
 using B2BPortal.Infrastructure;
 using System.Threading.Tasks;
 using AzureB2BInvite;
+using Newtonsoft.Json;
+using B2BPortal.Common.Helpers;
+using B2BPortal.Common.Utils;
+using B2BPortal.Common.Models;
 
 namespace B2BPortal
 {
@@ -28,7 +32,7 @@ namespace B2BPortal
             try
             {
                 //if this is a multi-tenant visitor, we don't need to do anything else here
-                if (ident.GetClaim("aud") == AdalUtil.Settings.AppClientId_Preauth)
+                if (ident.GetClaim("aud") == Settings.AppClientId_Preauth)
                 {
                     ident.AddClaim(new Claim(CustomClaimTypes.AuthType, AuthTypes.B2EMulti));
                     return ident;
@@ -74,7 +78,16 @@ namespace B2BPortal
             {
                 foreach (var role in response.Roles)
                 {
-                    ident.AddClaim(new Claim(ClaimTypes.Role, role.DisplayName));
+                    switch (role.Type)
+                    {
+                        case "#microsoft.graph.directoryRole":
+                            ident.AddClaim(new Claim(ClaimTypes.Role, role.DisplayName));
+                            break;
+
+                        case "#microsoft.graph.group":
+                            ident.AddClaim(new Claim(CustomClaimTypes.MemberOfGroup, JsonConvert.SerializeObject(new GroupObject(role.DisplayName, role.Id))));
+                            break;
+                    }
                 }
             }
             else

@@ -1,0 +1,158 @@
+﻿@using B2BPortal.Infrastructure;
+@using System.Security.Claims;
+@using AzureB2BInvite
+@using B2BPortal.Common.Utils;
+@using B2BPortal.Common.Helpers;
+
+@{
+    ViewBag.Title = "Batch Invitations";
+
+    var myGroups = Utils.GetGroups((ClaimsPrincipal)User);
+    var templates = (List<SelectListItem>)ViewBag.Templates;
+
+    var MemberTypeRO = (!User.Identity.IsInRole(B2BPortal.Common.Helpers.Roles.CompanyAdministrator));
+    var ro = (MemberTypeRO) ? "disabled" : "";
+
+}
+
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        <button id="btnStatus" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-stats"></span> Status</button>
+        <button id="btnHelp" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-question-sign"></span> Help</button>
+
+        @ViewBag.Title
+    </div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+            @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            <div class="form-group">
+                <div class="col-md-6">
+                    <div role="tabpanel" class="tab-pane active" id="manual">
+                        <label for="InvitationEmails">Enter Email Addresses</label>
+                        @Html.TextArea("InvitationEmails", new { @rows = "19", @placeholder = "bill@example.com\nmary@example.com", @class = "form-control", @id = "InvitationEmails" })
+                        @Html.ValidationMessage("InvitationEmails", new { @class = "text-danger" })
+                        <p>
+                            Enter or paste email addresses for each new prospective guest invitation, one per line.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <label for="InvitationMessage">Invitation Message (optional)</label>
+                    @Html.TextArea("InvitationMessage", new { @class = "form-control", @rows = "8", @id = "InvitationMessage" })
+                    @if (Settings.UseSMTP)
+                    {
+                    <div style="margin-top:11px;">
+                        @Html.Label("Invitation Template", htmlAttributes: new { @class = "control-label addHelp" })
+                        @Html.DropDownList("InviteTemplateId", templates, "Select email template...", new { @class = "form-control input-sm" })
+                        <div class="notes">
+                            Select an invitation template. This template will be used to create the invitation message that is emailed.
+                            Use the "Manage Mail Templates" admin tool to create and manage templates.
+                        </div>
+                    </div>
+                    } else
+                    {
+                        <input type="hidden" name="InviteTemplateId" id="InviteTemplateId" value="0" />
+                    }
+                    <div class="row" style="margin-top:10px;">
+                        <div class="col-md-6">
+                            <label class="control-label addHelp" for="GroupList">Add To Groups (optional)</label>
+                            <select id="GroupList" name="GroupList" multiple size="5" class="form-control" style="max-width:200px;">
+                                @foreach (var role in myGroups)
+                {
+                    <option value="@role.GroupId">@role.GroupName</option>
+}
+                            </select>
+                            <div class="notes">
+                                Optional: Ctrl-click to select one or more groups - users that are invited will be added to these groups.
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="MemberType">Member Type</label>
+                            <select class="form-control" id="MemberType" name="MemberType" @ro>
+                                <option value="Guest">Guest</option>
+                                <option value="Member">Member</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-12">
+                    <hr />
+                    <button type="button" id="btnSend" class="btn btn-primary pull-right">Invite</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+@Html.Partial("_help")
+
+@section scripts {
+    <script type="text/javascript">
+        $(function () {
+            $("#btnStatus").on("click", function () {
+                location.href = "/Admin/BulkInvite/Status";
+            });
+
+            $("#btnHelp").on("click", function () {
+                SiteUtil.ShowHelp("Batch Invitations", $("#HelpContent").html());
+            });
+
+            $("#btnSend").on("click", function () {
+                var emails = $("#InvitationEmails").val();
+                if (!validateEmails(emails))
+                    return;
+                var groups = [];
+
+                $("#GroupList").each(function (i, o) {
+                    if (o.value != "") {
+                        var item = {
+                            GroupName: o.text,
+                            GroupId: o.value
+                        };
+                        groups.push(item);
+                    }
+                });
+
+                var data = {
+                    EmailString: emails,
+                    MemberType: $("#MemberType").val(),
+                    InvitationMessage: $("#InvitationMessage").val(),
+                    InviteTemplateId: $("#InviteTemplateId").val(),
+                    GroupList: groups
+                };
+
+                SiteUtil.AjaxCall("/api/admin/SendBulkInvitations", data, function (res) {
+                    if (res.ErrorMessage != null) {
+                        alert("Invitations weren't sent due to an error.\n\r\n\r" + res.ErrorMessage);
+                        return;
+                    }
+                    location.href = "/Admin/BulkInvite/Status#id=" + res.id;
+                }, "POST");
+            });
+            function validateEmails(str) {
+                if (str.length == 0) {
+                    return false;
+                }
+                var arr = str.split(/\r?\n/g);
+                for (var x = 0; x < arr.length; x++) {
+                    if (!SiteUtil.IsValidEmailAddress(arr[x])) {
+                        SiteUtil.ShowHelp("Bad Email", "Please check \"" + arr[x] + "\" and confirm that it's a valid email address");
+                        return false;
+                    }
+                }
+                return true;
+            }
+        });
+    </script>
+
+}
+
+@section styles {
+    <style type="text/css">
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 110px !important;
+        }
+    </style>
+}

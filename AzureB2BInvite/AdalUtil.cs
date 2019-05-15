@@ -1,4 +1,6 @@
-﻿using AzureB2BInvite.Models;
+﻿using AzureB2BInvite.AuthCache;
+using AzureB2BInvite.Models;
+using B2BPortal.Common.Utils;
 using B2BPortal.Data;
 using Microsoft.Graph;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -9,56 +11,59 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
+using HtmlAgilityPack;
+using System.Xml;
 
 namespace AzureB2BInvite
 {
     public static class AdalUtil
     {
-        public static class Settings
+        public static async Task<AuthenticationResult> AuthenticateApp()
         {
-            public static string GraphResource = "https://graph.microsoft.com";
-            public static string AADInstanceLocal { get; set; }
-            public static string TenantID { get; set; }
-            public static string Tenant { get; set; }
-            public static string AADInstanceMulti { get; set; }
-            public static string GraphApiVersion { get; set; }
-            public static string AppClientId_Admin { get; set; }
-            public static string WebAppUrl { get; set; }
-            public static string AppClientSecret_Admin { get; set; }
-            public static string AppClientId_Preauth { get; set; }
-            public static string AppClientSecret_Preauth { get; set; }
-            public static string InvitingOrganization { get; set; }
-            public static RedemptionSettings SiteRedemptionSettings { get; set; }
-            public static InviteTemplate SiteInviteTemplateContent { get; set; }
-            public static string InvitationEmailSubject { get; set; }
-            public static string DefaultBodyTemplateName { get; set; }
-            public static string[] InviterRoleNames { get; set; }
-            public static string AssignedInviterRole { get; set; }
-            public static bool UseSMTP { get; set; }
+            return await AuthenticateApp(null, null);
         }
 
-        public static async Task<AuthenticationResult> AuthenticateApp(string graphResource=null)
+        public static async Task<AuthenticationResult> AuthenticateApp(string graphResource, CacheUser user)
         {
-            string resource = (graphResource != null) ? graphResource : Settings.GraphResource;
-            AuthenticationContext authContext = new AuthenticationContext(string.Format(Settings.AADInstanceLocal, Settings.TenantID));
-            AuthenticationResult authResult = await authContext.AcquireTokenAsync(resource, new ClientCredential(Settings.AppClientId_Admin, Settings.AppClientSecret_Admin));
-            return authResult;
+            AuthenticationResult authResult = null;
+            AuthenticationContext authContext = null;
+            try
+            {
+                string resource = graphResource ?? Settings.GraphResource;
+                var clientCred = new ClientCredential(Settings.AppClientId_Admin, Settings.AppClientSecret_Admin);
+
+                if (user != null)
+                {
+                    authContext = new AuthenticationContext(string.Format(Settings.AADInstanceLocal, Settings.TenantID), new AdalCosmosTokenCache(user.UserObjId, user.HostName));
+                    var tc = authContext.TokenCache.ReadItems();
+                    authResult = await authContext.AcquireTokenSilentAsync(resource, clientCred, new UserIdentifier(user.UserObjId, UserIdentifierType.UniqueId));
+                }
+                else
+                {
+                    authContext = new AuthenticationContext(string.Format(Settings.AADInstanceLocal, Settings.TenantID));
+                    authResult = await authContext.AcquireTokenAsync(resource, clientCred);
+                }
+
+                return authResult;
+            }
+            catch(AdalSilentTokenAcquisitionException ex)
+            {
+                throw ex;
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
         }
 
-        public static async Task<AuthenticationResult> AuthenticateUser(string graphResource = null)
+        public static AdalResponse CallGraph(string uri, dynamic postContent = null, bool isUpdate = false, string graphResource = null, CacheUser user = null, string accessToken = null)
         {
-            string resource = (graphResource != null) ? graphResource : Settings.GraphResource;
-
-            AuthenticationContext authContext = new AuthenticationContext(string.Format(Settings.AADInstanceLocal, Settings.TenantID));
-            AuthenticationResult authResult = await authContext.AcquireTokenSilentAsync(resource, Settings.AppClientId_Admin);
-            return authResult;
-        }
-
-        public static AdalResponse CallGraph(string uri, dynamic postContent = null, bool isUpdate = false, string graphResource = null)
-        {
-            string resource = (graphResource != null) ? graphResource : Settings.GraphResource;
+            string resource = graphResource ?? Settings.GraphResource;
 
             var res = new AdalResponse
             {
@@ -69,13 +74,16 @@ namespace AzureB2BInvite
             {
                 AuthenticationResult authResult = null;
 
-                // Get auth token
-                var task = Task.Run(async () => {
-                    authResult = await AuthenticateApp(resource);
-                });
-                task.Wait();
+                if (accessToken == null)
+                {
+                    // Get auth token
+                    var task = Task.Run(async () => {
+                        authResult = await AuthenticateApp(resource, user);
+                    });
+                    task.Wait();
 
-                string accessToken = authResult.AccessToken;
+                    accessToken = authResult.AccessToken;
+                }
 
                 var bearer = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -115,7 +123,7 @@ namespace AzureB2BInvite
                             var serverError = JsonConvert.DeserializeObject<GraphError>(res.ResponseContent);
                             var reason = (response == null ? "N/A" : response.ReasonPhrase);
                             var serverErrorMessage = (serverError.Error == null) ? "N/A" : serverError.Error.Message;
-                            res.Message = string.Format("Server response: {0}. Server detail: {1})", reason, serverErrorMessage);
+                            res.Message = string.Format("(Server response: {0}. Server detail: {1})", reason, serverErrorMessage);
                             return res;
                         }
                     }
@@ -160,7 +168,83 @@ namespace AzureB2BInvite
                 return JsonConvert.DeserializeObject<OIDConfigResponse>(res);
             }
         }
+
+        /// <summary>
+        ///Retrieves tenant branding for use on the portal and in custom emails. A screen-scraping workaround. 
+        ///Watch for a better way in the future and/or be aware that if this script block ever
+        ///moves on the page, this might break.
+        /// </summary>
+        public static void GetTenantBranding()
+        {
+            var uri = string.Format("https://login.microsoftonline.com/{0}/oauth2/authorize", Settings.TenantID);
+            Settings.Branding = new TenantBranding();
+            using (var web = new WebClient())
+            {
+                try
+                {
+                    web.Headers.Add("content-type", "application/x-www-form-urlencoded");
+                    var res = web.UploadString(uri, "POST", string.Format("client_id={0}", Settings.AppClientId_Admin));
+                    var doc = new HtmlDocument();
+                    doc.LoadHtml(res);
+                    var scriptBlock = doc.DocumentNode.SelectSingleNode("//script");
+
+                    var strdata = scriptBlock.InnerText;
+                    strdata = scriptBlock.InnerText.Replace("//<![CDATA[\n$Config=", "");
+                    strdata = strdata.Remove(strdata.Length - 7, 7);
+                    dynamic data = JsonConvert.DeserializeObject(strdata);
+                    dynamic brand = data.staticTenantBranding[0];
+
+                    Settings.Branding.BannerLogo.Name = brand.BannerLogo?.ToString();
+                    Settings.Branding.Illustration.Name = brand.Illustration?.ToString();
+                    Settings.Branding.TileDarkLogo.Name = brand.TileDarkLogo?.ToString();
+                    Settings.Branding.TileLogo.Name = brand.TileLogo?.ToString();
+                }
+                catch(Exception ex)
+                {
+                    Logging.WriteToAppLog("Unable to retrieve tenant branding", System.Diagnostics.EventLogEntryType.Error, ex);
+                }
+            }
+        }
     }
+    public class TenantBranding
+    {
+        public BrandingImage BannerLogo { get; set; }
+        public BrandingImage TileLogo { get; set; }
+        public BrandingImage TileDarkLogo { get; set; }
+        public BrandingImage Illustration { get; set; }
+
+        public TenantBranding()
+        {
+            BannerLogo = new BrandingImage();
+            TileLogo = new BrandingImage();
+            TileDarkLogo = new BrandingImage();
+            Illustration = new BrandingImage();
+        }
+        public class BrandingImage
+        {
+            private string _name;
+            public string Name {
+                get {
+                    return Name;
+                }
+                set {
+                    _name = value;
+                    if (_name == null || _name.Length == 0)
+                        return;
+                    Image = GetImage(value);
+                }
+            }
+            public byte[] Image { get;  set; }
+            private byte[] GetImage(string path)
+            {
+                using (var web = new WebClient())
+                {
+                    return web.DownloadData(path);
+                }
+            }
+        }
+    }
+
     public class OIDConfigResponse
     {
         [JsonProperty(PropertyName = "authorization_endpoint")]

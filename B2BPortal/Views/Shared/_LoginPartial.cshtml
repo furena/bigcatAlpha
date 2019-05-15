@@ -1,23 +1,25 @@
 ﻿@using B2BPortal.Infrastructure
-@{ 
+@using B2BPortal.Common.Helpers
+
+@{
     var isLocalAuth = (User.Identity.GetClaim(CustomClaimTypes.AuthType) == AuthTypes.Local);
 }
 @if (isLocalAuth)
 {
-    <text>
-        <ul class="nav navbar-nav navbar-right">
-            <li class="dropdown">
-                <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">@User.Identity.Name <span class="caret"></span></a>
-                <ul class="dropdown-menu">
-                    <li><a href="@Url.Action("Index", "Profile", new { area = "" })"><span class='glyphicon glyphicon-user pull-left'></span> Edit Profile</a></li>
-                    <li><a href="@Url.Action("Index", "Invite", new { area = "" })"><span class='glyphicon glyphicon-user pull-left'></span> Invitations</a></li>
-                </ul>
-            </li>
-            <li>
-                @Html.ActionLink("Sign out", "SignOut", "Account", new { area = "" }, new { })
-            </li>
-        </ul>
-    </text>
+    <ul class="nav navbar-nav navbar-right">
+        <li id="loaderWrapper">
+            <span id="expandedLoader" class="ui-loader glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+        </li>
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">@User.Identity.Name <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li><a href="@Url.Action("Index", "Profile", new { area = "" })"><span class='glyphicon glyphicon-user pull-left'></span> Edit Profile</a></li>
+            </ul>
+        </li>
+        <li>
+            @Html.ActionLink("Sign out", "SignOut", "Account", new { area = "" }, new { })
+        </li>
+    </ul>
 }
 else
 {

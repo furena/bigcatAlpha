@@ -1,6 +1,6 @@
 ﻿@using B2BPortal.Infrastructure
-@using Microsoft.Graph
 @using Newtonsoft.Json
+@using AzureB2BInvite
 @model AzureB2BInvite.Models.PreAuthDomain
 
 @{
@@ -15,14 +15,23 @@
     }
     var jGroups = JsonConvert.SerializeObject(Model.Groups);
 
-    var MemberTypeRO = (!User.IsInRole(B2BPortal.Infrastructure.Roles.CompanyAdministrator)) ? "readonly" : "";
     var isEditing = (Model != null && Model.Id != null);
     var domainName = (isEditing) ? Model.DomainName : "";
+    object memberTypeAttributes = new { @class = "form-control input-sm" };
+    var MemberTypeRO = (!User.Identity.IsInRole(B2BPortal.Common.Helpers.Roles.CompanyAdministrator));
+    if (MemberTypeRO)
+    {
+        memberTypeAttributes = new { @class = "form-control input-sm", @disabled = "disabled" };
+    }
 }
 
 @using (Html.BeginForm("Edit", "PreApproval", FormMethod.Post))
 {
     @Html.AntiForgeryToken()
+    if (MemberTypeRO)
+    {
+        <input type="hidden" name="MemberType" id="MemberType" value="Guest" />
+    }
 
     <div class="panel panel-primary" style="margin-top:20px;">
         <div class="panel-title panel-heading">
@@ -52,7 +61,7 @@
                                 <span id="spIsAADTenant" class="glyphicon glyphicon-aad-false"></span>
                             </span>
                             <span class="input-group-addon" style="padding:6px 9px;">
-                                email@@
+                                @@
                             </span>
                             @Html.EditorFor(model => model.DomainName, new { htmlAttributes = new { @class = "form-control" } })
                         </div>
@@ -75,7 +84,7 @@
 
                         <div style="margin-top:11px;">
                             @Html.LabelFor(model => model.MemberType, htmlAttributes: new { @class = "control-label addHelp" })
-                            @Html.EnumDropDownListFor(model => model.MemberType, new { @class = "form-control input-sm" })
+                            @Html.EnumDropDownListFor(model => model.MemberType, memberTypeAttributes)
                             @Html.ValidationMessageFor(model => model.MemberType, "", new { @class = "text-danger" })
                             <div class="notes">
                                 By default, approved guests are added as "Guest", with limited options for elevating permissions.
@@ -111,7 +120,7 @@
 
                     <div class="col-sm-3">
                         <label class="control-label addHelp" for="GroupList">Available Groups</label>
-                        <select id="GroupList" multiple size="10" class="form-control"></select>
+                        <select id="GroupList" multiple size="10" class="form-control" style="height:180px"></select>
 
                         <div class="input-group" style="margin-top:6px;">
                             <input type="text" class="form-control" id="GroupFilter" placeholder="Filter groups..." />
@@ -133,7 +142,7 @@
 
                     <div class="col-sm-3">
                         @Html.LabelFor(model => model.Groups, htmlAttributes: new { @class = "control-label addHelp" })
-                        <select id="Groups" multiple size="10" name="Groups" class="form-control"></select>
+                        <select id="Groups" multiple size="10" name="Groups" class="form-control" style="height:180px"></select>
                         @Html.ValidationMessageFor(model => model.Groups, "", new { @class = "text-danger" })
                         <div class="notes">
                             Select one or more groups from the Available Groups and add them to this list to create 
@@ -194,7 +203,7 @@
 
             $("#btnGroupAdd").on("click", function () {
                 $("#GroupList option:selected").each(function (i, o) {
-                    var hasIt = $("#Groups option[value=" + o.value + "]");
+                    var hasIt = $("#Groups option[value='" + o.value + "']");
                     if (hasIt.length == 0) {
                         $(o).appendTo("#Groups");
                     }
@@ -212,7 +221,7 @@
                 SiteUtil.AjaxCall("/api/Preauth/GetAADGroupList?filter=" + filter, null, function (res) {
                     $("span.glyphicon-refresh").removeClass("glyphicon-refresh-animate");
                     $(res).each(function (i, o) {
-                        var option = $("<option>").attr("value", o.Id).html(o.DisplayName);
+                        var option = $("<option>").attr("value", o.groupId + "=" + o.groupName).html(o.groupName);
                         option.appendTo("#GroupList");
                     });
                     if (init) {
@@ -224,7 +233,7 @@
             function loadAssignedGroups() {
                 $("#GroupList option").each(function (i, o) {
                     var res = $.grep(groups, function (group) {
-                        return (group == o.value);
+                        return ((group.groupId + "=" + group.groupName) == o.value);
                     });
                     if (res.length == 1) {
                         $("<option>").val(o.value).html(o.innerHTML).appendTo("#Groups");

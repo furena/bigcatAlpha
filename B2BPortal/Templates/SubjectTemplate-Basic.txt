@@ -1,1 +1,1 @@
-﻿You're invited to the {{orgname}} organization
+﻿You're invited to the {{InvitingOrgName}} organization

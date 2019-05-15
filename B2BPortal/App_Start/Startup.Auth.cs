@@ -4,12 +4,21 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security.OpenIdConnect;
 using System.Threading.Tasks;
 using Microsoft.Owin.Security.Notifications;
-using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using System.Configuration;
 using System.IdentityModel.Tokens;
 using B2BPortal.Infrastructure;
 using System;
 using System.Web;
+using System.Linq;
+using System.Linq.Expressions;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using AzureB2BInvite.AuthCache;
+using System.IdentityModel.Claims;
+using B2BPortal.Common.Helpers;
+using B2BPortal.Common.Utils;
+using AzureB2BInvite;
+using Microsoft.IdentityModel.Tokens;
 
 namespace B2BPortal
 {
@@ -19,6 +28,7 @@ namespace B2BPortal
 
         // App config settings
         private static string clientId_admin = ConfigurationManager.AppSettings["ida:ClientId_Admin"];
+        private static string clientSecret_admin = ConfigurationManager.AppSettings["ida:ClientSecret_Admin"];
         private static string clientId_preAuth = ConfigurationManager.AppSettings["ida:ClientId_PreAuth"];
 
         private static string tenant = ConfigurationManager.AppSettings["ida:Tenant"];
@@ -51,7 +61,7 @@ namespace B2BPortal
                 ClientId = clientId_preAuth,
                 Notifications = new OpenIdConnectAuthenticationNotifications
                 {
-                    AuthenticationFailed = AuthenticationFailed,
+                    AuthenticationFailed = OnAuthenticationFailed,
                     RedirectToIdentityProvider = (context) =>
                     {
                         var issuer = "";
@@ -61,7 +71,7 @@ namespace B2BPortal
                             if (user.Length > 0)
                             {
                                 var domain = user.Split('@')[1];
-                                issuer = string.Format("https://login.microsoftonline.com/{0}/oauth2/authorize?login_hint={1}", domain, user);
+                                issuer = string.Format(aadInstanceLocal + "/oauth2/authorize?login_hint={1}", domain, user);
                             }
                         }
 
@@ -91,7 +101,6 @@ namespace B2BPortal
                 ClientId = clientId_admin,
                 Notifications = new OpenIdConnectAuthenticationNotifications
                 {
-                    AuthenticationFailed = AuthenticationFailed,
                     RedirectToIdentityProvider = (context) =>
                     {
                         string appBaseUrl = context.Request.Scheme + "://" + context.Request.Host + context.Request.PathBase;
@@ -99,23 +108,26 @@ namespace B2BPortal
                         context.ProtocolMessage.PostLogoutRedirectUri = appBaseUrl;
                         return Task.FromResult(0);
                     },
+                    AuthorizationCodeReceived = OnAuthorizationCodeReceived,
+                    AuthenticationFailed = OnAuthenticationFailed
                 },
                 TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = false,
                 },
                 AuthenticationType = AuthTypes.Local,
+                ResponseType = Microsoft.IdentityModel.Protocols.OpenIdConnectResponseTypes.CodeIdToken
             };
             app.UseOpenIdConnectAuthentication(b2bOptions);
         }
 
         // Used for avoiding yellow-screen-of-death
-        private Task AuthenticationFailed(AuthenticationFailedNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)
+        private Task OnAuthenticationFailed(AuthenticationFailedNotification<OpenIdConnectMessage, OpenIdConnectAuthenticationOptions> notification)
         {
             notification.HandleResponse();
             if (notification.Exception.Message == "access_denied")
             {
-                notification.Response.Redirect("/");
+                notification.Response.Redirect("/?message=access_denied");
             }
             else
             {
@@ -124,5 +136,27 @@ namespace B2BPortal
 
             return Task.FromResult(0);
         }
+
+        private async Task OnAuthorizationCodeReceived(AuthorizationCodeReceivedNotification context)
+        {
+            try
+            {
+                var code = context.Code;
+
+                // Create a Client Credential Using an Application Key
+                ClientCredential credential = new ClientCredential(clientId_admin, clientSecret_admin);
+                string userObjId = context.AuthenticationTicket.Identity.GetClaim(Settings.ObjectIdentifier);
+
+                Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext authContext = new Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationContext(string.Format(aadInstanceLocal, tenant), new AdalCosmosTokenCache(userObjId, Utils.GetFQDN(context.Request)));
+                AuthenticationResult result = await authContext.AcquireTokenByAuthorizationCodeAsync(
+                    code, new Uri(HttpContext.Current.Request.Url.GetLeftPart(UriPartial.Path)), credential, Settings.GraphResource);
+            }
+            catch (Exception ex)
+            {
+                var newEx = new Exception("Error processing the retrieved auth code. ", ex);
+                Logging.WriteToAppLog(newEx.Message, System.Diagnostics.EventLogEntryType.Error, newEx);
+                throw newEx;
+            }
+       }
     }
 }

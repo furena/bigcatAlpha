@@ -26,9 +26,6 @@
     "clientId_preAuth": {
       "value": null
     },
-    "clientSecret_preAuth": {
-      "value": null
-    },
     "mailServerFqdn": {
         "value": null
     },

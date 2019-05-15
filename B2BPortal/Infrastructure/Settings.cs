@@ -17,6 +17,7 @@ namespace B2BPortal.Infrastructure
         public static string AppRootPath = HttpContext.Current.Server.MapPath("//");
         public static bool SiteConfigReady {get; set;}
         public static SiteConfig CurrSiteConfig { get; set; }
+        public static string StorageConnectionString { get; set; }
 
         /// <summary>
         /// If the SMTP "MailServer" configuration settings is null or empty in web.config, this will be set to false
@@ -51,6 +52,7 @@ namespace B2BPortal.Infrastructure
             try
             {
                 CurrSiteConfig = DocDBRepo.DB<SiteConfig>.GetItemsAsync(c => c.DocType == DocTypes.SiteConfig).Result.LastOrDefault();
+                
                 if (CurrSiteConfig != null)
                 {
                     if (CurrSiteConfig.InviteTemplateId != null)

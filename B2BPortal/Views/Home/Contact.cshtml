@@ -1,10 +1,17 @@
 ﻿@using B2BPortal.Infrastructure
+@using AzureB2BInvite
 
-<h2>@ViewBag.Message</h2>
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        @ViewBag.Message
+    </div>
+    <div class="panel-body">
+        <dl class="dl-horizontal">
+            <dt>Company</dt>
+            <dd>@Settings.CurrSiteConfig.InvitingOrg</dd>
+            <dt>For more information</dt>
+            <dd><a href="mailto:@Settings.CurrSiteConfig.SiteRedemptionSettings.InviterResponseEmailAddr">@Settings.CurrSiteConfig.SiteRedemptionSettings.InviterResponseEmailAddr</a></dd>
+        </dl>
+    </div>
+</div>
 
-<dl class="dl-horizontal">
-    <dt>Company</dt>
-    <dd>@Settings.CurrSiteConfig.InvitingOrg</dd>
-    <dt>For more information</dt>
-    <dd><a href="mailto:@Settings.CurrSiteConfig.SiteRedemptionSettings.InviterResponseEmailAddr">@Settings.CurrSiteConfig.SiteRedemptionSettings.InviterResponseEmailAddr</a></dd>
-</dl>

@@ -7,6 +7,7 @@ using Microsoft.Owin.Security.Cookies;
 using Microsoft.Owin.Security;
 using B2BPortal.Infrastructure;
 using System.Security.Claims;
+using B2BPortal.Common.Helpers;
 
 namespace B2BPortal.Controllers
 {

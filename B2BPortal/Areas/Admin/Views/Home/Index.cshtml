@@ -3,7 +3,7 @@
 @{
     var pendingColor = "#fbffc9";
     ViewBag.Title = "Pending Guest Requests";
-    bool hasRecords = (Model.Count() > 0);
+    bool hasRecords = ((Model as ICollection<GuestRequest>).Count > 0);
     var disableButton = (hasRecords) ? "" : "disabled";
 }
 
@@ -12,6 +12,7 @@
     @Html.AntiForgeryToken()
     <div class="panel panel-primary" style="margin-top:20px;">
         <div class="panel-title panel-heading">
+            <button id="btnHistory" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-time"></span> History</button>
             @ViewBag.Title
         </div>
         <div class="panel-body">
@@ -41,7 +42,7 @@
                                 </select>
                                 <button type="button" id="btnApplyGlobal" class="btn btn-default"><span class="glyphicon glyphicon-ok-sign"></span></button>
                             </th>
-                            <th>RequestID</th>
+                            <th>Request Date</th>
                             <th>Email Address</th>
                             <th>Request Comment</th>
                             <th>Status</th>
@@ -69,7 +70,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    @request.Id
+                                    <span class="utcDate">@request.RequestDate</span>
                                     <input type="hidden" name="Id" value="@request.Id" />
                                     <input type="hidden" name="EmailAddress.@request.Id" value="@request.EmailAddress" />
                                 </td>
@@ -127,42 +128,52 @@
                 width: 120px !important;
             }
         }
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 120px !important;
+        }    
     </style>
 }
 
 @section scripts {
     <script type="text/javascript">
-                $(function () {
-                    $("#btnApplyGlobal").on("click", function () {
-                        var globalValue = $("#GlobalApproval").val();
-                        $("input:radio").each(function (i, o) {
-                            if (o.value == globalValue) {
-                                $(o).click();
-                            }
-                        });
-                    });
-                    $("#btnRefresh").on("click", function () {
-                        location.href = "/admin";
-                    });
-                    $("input:radio").parent("label").on("click", function () {
-                        var o = $(this);
-                        var val = o.children("input").val();
-                        o.parentsUntil("tr").last().parent().css("background-color", getColor(val));
-                    });
-
-                    function getColor(d) {
-                        switch (d) {
-                            case "0":
-                                return "#d2ffc9";
-                                break;
-                            case "2":
-                                return "#ffd8c9";
-                                break;
-                            case "3":
-                                return "@pendingColor";
-                                break;
-                        }
+        $(function () {
+            $("span.utcDate").each(function () {
+                $(this).html(SiteUtil.UtcToLocal(this.innerText));
+            });
+            $("#btnApplyGlobal").on("click", function () {
+                var globalValue = $("#GlobalApproval").val();
+                $("input:radio").each(function (i, o) {
+                    if (o.value == globalValue) {
+                        $(o).click();
                     }
                 });
+            });
+            $("#btnRefresh").on("click", function () {
+                location.href = "/admin";
+            });
+            $("#btnHistory").on("click", function () {
+                location.href = "/admin/history";
+            });
+            $("input:radio").parent("label").on("click", function () {
+                var o = $(this);
+                var val = o.children("input").val();
+                o.parentsUntil("tr").last().parent().css("background-color", getColor(val));
+            });
+
+            function getColor(d) {
+                switch (d) {
+                    case "0":
+                        return "#d2ffc9";
+                        break;
+                    case "2":
+                        return "#ffd8c9";
+                        break;
+                    case "3":
+                        return "@pendingColor";
+                        break;
+                }
+            }
+        });
     </script>
 }

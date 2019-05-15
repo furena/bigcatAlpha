@@ -1,39 +1,67 @@
-﻿@model IEnumerable<B2BPortal.Models.SiteConfig>
+﻿@model IEnumerable<AzureB2BInvite.Models.SiteConfig>
 
 @{
-    ViewBag.Title = "Site Configuration";
+    ViewBag.Title = "Review Config History";
+}
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        <button id="btnReturn" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-chevron-left"></span> Return</button>
+        @ViewBag.Title
+    </div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+            <table class="table">
+                <tr>
+                    <th>@Html.DisplayNameFor(model => model.ConfigVersion)</th>
+                    <th>@Html.DisplayNameFor(model => model.ConfigDate)</th>
+                    <th>@Html.DisplayNameFor(model => model.ConfigAuthor)</th>
+                    <th>@Html.DisplayNameFor(model => model.SiteName)</th>
+                    <th>@Html.DisplayNameFor(model => model.WelcomeMessage)</th>
+                    <th>@Html.DisplayNameFor(model => model.SiteRedemptionSettings.RequirePreauth)</th>
+                    <th>@Html.DisplayNameFor(model => model.RequireTOSAgreement)</th>
+                    <th>@Html.DisplayNameFor(model => model.TOSDocument)</th>
+                    <th></th>
+                </tr>
+
+                @foreach (var item in Model)
+                {
+                    <tr data-id="@item.Id" title="Click to edit" class="bg-rowEdit" style="cursor:pointer">
+                        <td>@Html.DisplayFor(modelItem => item.ConfigVersion)</td>
+                        <td>@Html.DisplayFor(modelItem => item.ConfigDate)</td>
+                        <td>@Html.DisplayFor(modelItem => item.ConfigAuthor)</td>
+                        <td>@Html.DisplayFor(modelItem => item.SiteName)</td>
+                        <td>@Html.DisplayFor(modelItem => item.WelcomeMessage)</td>
+                        <td>@Html.DisplayFor(modelItem => item.SiteRedemptionSettings.RequirePreauth)</td>
+                        <td>@Html.DisplayFor(modelItem => item.RequireTOSAgreement)</td>
+                        <td>@Html.DisplayFor(modelItem => item.TOSDocument)</td>
+                    </tr>
+                }
+
+            </table>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript">
+        $(function () {
+            $("#btnReturn").on("click", function () {
+                location.href = "/Admin/SiteConfig";
+            });
+            $("table tr:gt(0)")
+                .on("click", function () {
+                    location.href = "/Admin/SiteConfig/HistoryDetail/" + $(this).data("id");
+                });
+        });
+    </script>
 }
 
-<h2>@ViewBag.Title</h2>
+@section styles {
+    <style type="text/css">
 
-<table class="table">
-    <tr>
-        <th>@Html.DisplayNameFor(model => model.ConfigVersion)</th>
-        <th>@Html.DisplayNameFor(model => model.ConfigDate)</th>
-        <th>@Html.DisplayNameFor(model => model.ConfigAuthor)</th>
-        <th>@Html.DisplayNameFor(model => model.SiteName)</th>
-        <th>@Html.DisplayNameFor(model => model.WelcomeMessage)</th>
-        <th>@Html.DisplayNameFor(model => model.SiteRedemptionSettings.RequirePreauth)</th>
-        <th>@Html.DisplayNameFor(model => model.RequireTOSAgreement)</th>
-        <th>@Html.DisplayNameFor(model => model.TOSDocument)</th>
-        <th></th>
-    </tr>
-
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@Html.DisplayFor(modelItem => item.ConfigVersion)</td>
-        <td>@Html.DisplayFor(modelItem => item.ConfigDate)</td>
-        <td>@Html.DisplayFor(modelItem => item.ConfigAuthor)</td>
-        <td>@Html.DisplayFor(modelItem => item.SiteName)</td>
-        <td>@Html.DisplayFor(modelItem => item.WelcomeMessage)</td>
-        <td>@Html.DisplayFor(modelItem => item.SiteRedemptionSettings.RequirePreauth)</td>
-        <td>@Html.DisplayFor(modelItem => item.RequireTOSAgreement)</td>
-        <td>@Html.DisplayFor(modelItem => item.TOSDocument)</td>
-        <td>
-            @Html.ActionLink("Details", "HistoryDetail", new { id = item.Id })
-        </td>
-    </tr>
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 120px !important;
+        }
+    </style>
 }
-
-</table>

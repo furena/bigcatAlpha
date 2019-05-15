@@ -1,4 +1,4 @@
-﻿@using B2BPortal.Infrastructure
+﻿@using AzureB2BInvite
 @model B2BPortal.Data.InviteTemplate
 
 @{
@@ -14,6 +14,7 @@
     @Html.AntiForgeryToken()
     <div class="panel panel-primary" style="margin-top:20px;">
         <div class="panel-title panel-heading">
+            <button id="btnHelp" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-question-sign"></span> Help</button>
             @ViewBag.Title - @ViewBag.Operation
         </div>
         <div class="panel-body">
@@ -37,7 +38,6 @@
                             <button id="btnDelete" type="button" class="btn btn-default control"><span class="glyphicon glyphicon-trash"></span> Delete</button>
                         }
                         <button id="btnCancel" type="button" class="btn btn-default control"><span class="glyphicon glyphicon-remove"></span> Cancel</button>
-                        <button id="btnHelp" type="button" class="btn btn-default control"><span class="glyphicon glyphicon-question-sign"></span> Help</button>
                     </div>
                 </div>
 
@@ -70,6 +70,11 @@
                                     <li>{{InvitingOrgName}}</li>
                                     <li>{{InvitationLink}}</li>
                                     <li>{{OrgContactEmail}}</li>
+                                    <li>{{InvitationStatus}}</li>
+                                </ul>
+                                <span>Optional for bulk invitation templates</span>
+                                <ul>
+                                    <li>{{CustomMessage}}</li>
                                 </ul>
                             </div>
                         }
@@ -109,7 +114,7 @@
             </li>
             <li>
                 This self-service sign-up tool optionally supports directly sending invitation emails via a custom mail service (SMTP).
-                Your site currently is @((useSMTP) ? "" : "not") configured to deliver messages this way. If SMTP is configured, this template will define
+                Your site currently is @((useSMTP) ? "" : "not ")configured to deliver messages this way. If SMTP is configured, this template will define
                 the entire email message. Custom field strings are available to place the desired content (invitation link, business name, etc.) 
             </li>
         </ul>
@@ -183,8 +188,8 @@
         }
         div.fields {
             position: relative;
-            top: 330px;
-            margin-left: 20px;
+            top: 200px;
+            margin-left: 10px;
         }
 
             div.fields span {
@@ -197,7 +202,11 @@
             }
 
                 div.fields ul li {
-                    margin-left: -20px;
+                    margin-left: -25px;
                 }
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 120px !important;
+        }    
     </style>
 }

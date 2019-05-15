@@ -1,11 +1,39 @@
-﻿@{
+﻿@using B2BPortal.Infrastructure;
+@using System.Security.Claims;
+
+@{
     ViewBag.Title = "Awaiting Configuration";
 }
 
-<h2>Awaiting Configuration</h2>
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        @ViewBag.Title
+    </div>
+    <div class="panel-body">
+        Thanks for visiting - this is a brand new site and an administrator needs to log in and complete the site configuration. Check back soon!
 
-Thanks for visiting - this is a brand new site and an administrator needs to log in and complete the site configuration. Check back soon!
+        <p style="margin:10px;">
+            (Administrators, please @Html.ActionLink("sign in", "SignIn", "Account", new { area = "" }, new { }) to setup your new site.)
+        </p>
 
-<p style="margin:10px;">
-    (Administrators, please @Html.ActionLink("sign in", "SignIn","Account", new { area = "" }, new { }) to setup your new site.)
-</p>
+        @if (User.Identity.IsAuthenticated)
+        {
+            var roles = User.Identity.GetClaims(ClaimTypes.Role);
+
+            <p class="alert alert-warning">
+                You appear to be logged in, but the site hasn't been configured yet and you aren't authorized to perform the configuration.
+
+                For troubleshooting purposes, here are the roles you are currently assigned:
+                <ul class="list-group" style="margin-left:20px;max-width:200px;">
+                    @{
+                        foreach (var role in roles)
+                        {
+                            <li class="list-group-item list-group-item-info">@role</li>
+                        }
+                    }
+                </ul>
+            </p>
+         }
+    </div>
+</div>
+

@@ -6,6 +6,9 @@ using System.Web;
 
 namespace AzureB2BInvite.Models
 {
+    /// <summary>
+    /// https://developer.microsoft.com/en-us/graph/docs/api-reference/v1.0/resources/invitation
+    /// </summary>
     public class GraphInvitation
     {
         [JsonProperty(PropertyName = "@odata.context") ]
@@ -35,11 +38,17 @@ namespace AzureB2BInvite.Models
         [JsonProperty(PropertyName = "inviteRedirectUrl")]
         public string InviteRedirectUrl { get; set; }
 
+        /// <summary>
+        /// possible values: PendingAcceptance, Completed, InProgress, and Error
+        /// </summary>
         [JsonProperty(PropertyName = "status")]
         public string Status { get; set; }
 
         [JsonProperty(PropertyName = "invitedUser")]
         public InvitedUser InvitedUser { get; set; }
+
+        [JsonProperty(PropertyName = "errorInfo")]
+        public string ErrorInfo { get; set; }
     }
     public class EmailAddress
     {

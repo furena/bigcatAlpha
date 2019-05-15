@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using B2BPortal.Infrastructure;
-using B2BPortal.Models;
 using B2BPortal.Infrastructure.Filters;
 using AzureB2BInvite.Models;
+using AzureB2BInvite.Utils;
 using B2BPortal.Data;
+using AzureB2BInvite;
+using AzureB2BInvite.Rules;
 
 namespace B2BPortal.Areas.Admin.Controllers
 {
@@ -33,26 +35,33 @@ namespace B2BPortal.Areas.Admin.Controllers
 
         public async Task<ActionResult> Index()
         {
-            var config = await SiteConfig.GetCurrConfig();
+            var config = await SiteConfigRules.GetCurrConfig();
             if (config == null)
             {
-                config = new SiteConfig();
+                _templates = (await TemplateUtilities.InitializeDefaultTemplate(User.Identity.GetEmail())).ToList();
+                var template = _templates.First();
+
+                config = new SiteConfig
+                {
+                    InviteTemplateContent = template,
+                    InviteTemplateId = template.Id
+                };
             }
+
             ViewBag.Templates = GetTemplates(config.InviteTemplateId);
 
             return View("Edit", config);
-            //return View(config);
         }
 
         public async Task<ActionResult> List()
         {
-            var configs = await SiteConfig.GetAllConfigs();
+            var configs = await SiteConfigRules.GetAllConfigs();
             return View(configs);
         }
 
         public async Task<ActionResult> Details(string id)
         {
-            var config = await SiteConfig.GetConfig(id);
+            var config = await SiteConfigRules.GetConfig(id);
             ViewBag.Templates = GetTemplates(config.InviteTemplateId);
             return View(config);
         }
@@ -60,7 +69,7 @@ namespace B2BPortal.Areas.Admin.Controllers
         public async Task<ActionResult> Edit(string id)
         {
             ViewBag.Operation = "Edit";
-            var config = await SiteConfig.GetConfig(id);
+            var config = await SiteConfigRules.GetConfig(id);
             ViewBag.Templates = GetTemplates(config.InviteTemplateId);
 
             return View(config);
@@ -68,7 +77,7 @@ namespace B2BPortal.Areas.Admin.Controllers
 
         public async Task<ActionResult> HistoryDetail(string id)
         {
-            var config = await SiteConfig.GetConfig(id);
+            var config = await SiteConfigRules.GetConfig(id);
             ViewBag.Templates = GetTemplates(config.InviteTemplateId);
 
             return View(config);
@@ -84,7 +93,13 @@ namespace B2BPortal.Areas.Admin.Controllers
                 try
                 {
                     config.ConfigAuthor = User.Identity.GetEmail();
-                    config = await SiteConfig.SetNewConfig(config);
+                    config = await SiteConfigRules.SetNewConfig(config);
+                    Settings.SiteConfigReady = true;
+                    Settings.CurrSiteConfig = config;
+
+                    //refresh invitation settings
+                    MailSender.MailFrom = Settings.CurrSiteConfig.SiteRedemptionSettings.InviterResponseEmailAddr;
+
                     return RedirectToAction("Index");
                 }
                 catch

@@ -1,16 +1,33 @@
-﻿$(document).ajaxComplete(function () {
-    $(".ui-loader").hide();
+﻿var lTimezone, lTimezoneAbb, bSkipSBInit;
+
+//global initializer
+$(function () {
+    lTimezone = moment.tz.guess();
+    lTimezoneAbb = moment().tz(lTimezone).zoneName();
+    $.fx.speeds._default = 200;
+});
+
+$(document).ajaxComplete(function () {
+    hideAjax();
 });
 $(document).ajaxStart(function () {
-    $(".ui-loader").show();
+    $(".ui-loader")
+        .addClass("glyphicon-refresh-animate")
+        .css("visibility", "visible");
 });
+function hideAjax() {
+    $(".ui-loader")
+        .removeClass("glyphicon-refresh-animate")
+        .css("visibility", "hidden");
+}
 $(function () {
     //initialize help icons
+    hideAjax();
     $("label.addHelp")
         .each(function (i, o) {
             var help = $(this).closest("div").children("div.notes").eq(0).text();
             $(this)
-                .tooltip({ title: help, placement: "auto", trigger: 'manual' });
+                .tooltip({ title: help, placement: "auto", trigger: "manual" });
         })
         .on("mouseenter click", function (e) {
             if (e.offsetX > (e.target.offsetWidth - 15)) {
@@ -27,9 +44,9 @@ var localErr = {};
 $(document).ajaxError(function (event, xhr, ajaxOptions, thrownError) {
     if (typeof xhr.responseJSON == "object") {
         localErr = xhr.responseJSON;
-
-        if (localErr.ErrorMessage != null && localErr.ErrorMessage.length > 0) {
-            alert(localErr.ErrorMessage);
+        var msg = (localErr.ErrorMessage || localErr.ExceptionMessage);
+        if (msg != null && msg.length > 0) {
+            alert(msg);
             return;
         }
 
@@ -128,7 +145,8 @@ var SiteUtil = function () {
     }
     function _deTc(sTitle) {
         var re = /([a-z])([A-Z])/g;
-        return sTitle.replace(re, "$1 $2");
+        var s = sTitle.replace(re, "$1 $2");
+        return s;
     }
     function _ajaxCall(url, data, callback, method, successMessage) {
         method = (method == null) ? "GET" : method;
@@ -217,6 +235,10 @@ var SiteUtil = function () {
                 return "th";
         }
     }
+    function _pluralize(label, count) {
+        return count.toString() + " " + ((count == 1) ? label : label + "s");
+    }
+
     function addCommas(nStr) {
         nStr += '';
         x = nStr.split('.');
@@ -227,6 +249,15 @@ var SiteUtil = function () {
             x1 = x1.replace(rgx, '$1' + ',' + '$2');
         }
         return x1 + x2;
+    }
+    function _utcToLocal(sDate, sInputFormatMask, sOutputFormatMask, bIncludeTZAbb) {
+        bIncludeTZAbb = (bIncludeTZAbb == null) ? true : bIncludeTZAbb;
+        sOutputFormatMask = sOutputFormatMask || 'MM/DD/YYYY h:mm A';
+        var bIsUTC = (typeof sDate == "string" && sDate.indexOf("T") == 10);
+        sInputFormatMask = (bIsUTC) ? null : (sInputFormatMask || 'MM/DD/YYYY HH:mm A');
+        var res = moment.utc(sDate, sInputFormatMask).tz(lTimezone).format(sOutputFormatMask);
+        if (bIncludeTZAbb) res += " " + lTimezoneAbb;
+        return (res.indexOf("Invalid date") > -1) ? "N/A" : res;
     }
     function copyToClipboard(text) {
         if (window.clipboardData && window.clipboardData.setData) {
@@ -255,6 +286,8 @@ var SiteUtil = function () {
         DeTC: _deTc,
         ShowModal: _showModal,
         GetModal: _getModal,
+        Pluralize: _pluralize,
+        UtcToLocal: _utcToLocal,
         ShowHelp: _showHelp,
         AlertImages: alertImages,
         AjaxCall: _ajaxCall,

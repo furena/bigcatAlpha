@@ -1,4 +1,7 @@
-﻿using System;
+﻿using B2BPortal.Models;
+using Microsoft.Owin.Security.DataProtection;
+using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
@@ -15,7 +18,10 @@ namespace B2BPortal.Infrastructure
 {
     public static class Utils
     {
+        public static IDataProtector OwinDPP { get; set; }
+
         public static string ApplicationName { get; set; }
+        public static string CrossServerKey { get; set; }
 
         /// <summary>
         /// Retrieve a strongly-typed claim lookup result from a user's ClaimsIdentity
@@ -127,6 +133,21 @@ namespace B2BPortal.Infrastructure
         }
 
         /// <summary>
+        /// Return the collection of the user's current assigned Group memberships
+        /// </summary>
+        /// <param name="claimsPrincipal">the user's ClaimsPrincipal object</param>
+        /// <returns>collection of strings</returns>
+        public static IEnumerable<GroupObject> GetGroups(ClaimsPrincipal claimsPrincipal)
+        {
+            if (claimsPrincipal == null)
+                throw new NullReferenceException("claimsPrinciple is null");
+
+            var groups = claimsPrincipal.Claims.Where(x => x.Type == CustomClaimTypes.MemberOfGroup).Select(n => n.Value);
+            var res = groups.Select(g => JsonConvert.DeserializeObject<GroupObject>(g)).OrderBy(g => g.GroupName).ToList();
+            return res;
+        }
+
+        /// <summary>
         /// Insert spaces before camel-cased words in a token, i.e., "ThisIsAString" to "This Is A String"
         /// </summary>
         /// <param name="s">the token</param>
@@ -136,10 +157,10 @@ namespace B2BPortal.Infrastructure
             return Regex.Replace(s, "([a-z](?=[A-Z0-9])|[A-Z](?=[A-Z][a-z]))", "$1 ");
         }
 
-        public static string GetProfileUrl(HttpRequestBase request)
+        public static string GetProfileUrl(Uri requestUri)
         {
-            var port = (request.Url.Port == 443 || request.Url.Port == 80) ? "" : ":" + request.Url.Port.ToString();
-            return string.Format("{0}://{1}{2}/profile", request.Url.Scheme, request.Url.Host, port);
+            var port = (requestUri.Port == 443 || requestUri.Port == 80) ? "" : ":" + requestUri.Port.ToString();
+            return string.Format("{0}://{1}{2}/profile", requestUri.Scheme, requestUri.Host, port);
         }
 
         public static string GetTempPassword()
@@ -188,6 +209,20 @@ namespace B2BPortal.Infrastructure
         private static FileAttributes RemoveAttribute(FileAttributes attributes, FileAttributes attributesToRemove)
         {
             return attributes & ~attributesToRemove;
+        }
+
+        public static string EncryptString(string stringToEncrypt)
+        {
+            var encoded = Encoding.UTF8.GetBytes(stringToEncrypt);
+            var res = OwinDPP.Protect(encoded);
+            return Encoding.UTF8.GetString(res);
+        }
+
+        public static string DecryptString(string stringToDecrypt)
+        {
+            var decoded = Encoding.UTF8.GetBytes(stringToDecrypt);
+            var res = OwinDPP.Unprotect(decoded);
+            return Encoding.UTF8.GetString(res);
         }
     }
 

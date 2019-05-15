@@ -1,0 +1,147 @@
+﻿@{
+    ViewBag.Title = "Request History";
+}
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        <button id="btnReturn" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-chevron-left"></span> Return</button>
+        @ViewBag.Title
+    </div>
+    <div class="panel-body">
+        <div id="filterItems">
+            <h4>Filter</h4>
+            <div class="col-sm-2">
+                <label for="AuthUser">Approver</label>
+                <input type="text" class="form-control" id="AuthUser" name="AuthUser" />
+            </div>
+            <div class="col-sm-2">
+                <label for="FromFilter">Between</label>
+                <div class="input-group date" id="datepickerfrom">
+                    <input style="display:inline-block" type="text" id="RequestDateFrom" name="RequestDateFrom" class="form-control" />
+                    <span class="input-group-addon">
+                        <span class="glyphicon-calendar glyphicon"></span>
+                    </span>
+                </div>
+            </div>
+            <div class="col-sm-2">
+                <label for="ToFilter">and</label>
+                <div class="input-group date" id="datepickerto">
+                    <input style="display:inline-block" type="text" id="RequestDateTo" name="RequestDateTo" class="form-control" />
+                    <span class="input-group-addon">
+                        <span class="glyphicon-calendar glyphicon"></span>
+                    </span>
+                </div>
+            </div>
+            <div class="col-sm-3">
+                <label>&nbsp;</label>
+                <div>
+                    <button class="btn btn-sm btn-primary" id="btnFilter" type="button">Filter</button>
+                    <button class="btn btn-sm btn-default" id="btnResetFilter" type="button">Reset</button>
+                </div>
+            </div>
+        </div>
+        <div class="tableWrap">
+            <table class="table">
+                <tr class="head">
+                    <th>Email</th>
+                    <th>First Name</th>
+                    <th>Last Name</th>
+                    <th>Status</th>
+                    <th>Request Date</th>
+                    <th>Last Modified</th>
+                    <th>Auth User</th>
+                    <th>PreAuthed?</th>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="modal fade" tabindex="-1" role="dialog" id="inviteDetails">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#request" aria-controls="request" role="tab" data-toggle="tab">Request</a></li>
+                    <li role="presentation"><a href="#response" aria-controls="response" role="tab" data-toggle="tab">Response</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="request"></div>
+                    <div role="tabpanel" class="tab-pane" id="response"></div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script type="text/javascript" src="~/Scripts/app/History.js"></script>
+}
+@section styles {
+    <style type="text/css">
+        table.table tr.head th {
+            border-top: 0;
+            vertical-align: bottom;
+        }
+
+        tr.bg-rowEdit:hover {
+            background-color: #efefef;
+        }
+
+        div.tableWrap {
+            max-height: 500px;
+            overflow: auto;
+            clear: both;
+        }
+        .glyphicon {
+            cursor:pointer;
+        }
+        div.modal-body div.tab-pane {
+            overflow-y: auto;
+            height: 480px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #bababa;
+            padding: 5px;
+        }
+
+            div.modal-body div.tab-pane div {
+                clear: both;
+                max-height: 100px;
+                overflow-y: auto;
+                border-bottom: 1px solid #bababa;
+                padding: 5px;
+            }
+
+        span.label {
+            color: #404040 !important;
+            display: inline-block;
+            width: 130px;
+            font-weight: bold;
+            float: left;
+            white-space: pre-wrap;
+            font: 10pt Segoe UI;
+            text-align: left;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        span.data {
+            display: inline-block;
+            float: left;
+            width: auto;
+            font-family: Consolas, courier new;
+            font-size: 10pt;
+        }
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 120px !important;
+        }
+     </style>
+}
+

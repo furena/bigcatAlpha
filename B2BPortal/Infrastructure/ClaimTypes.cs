@@ -11,6 +11,7 @@ namespace B2BPortal.Infrastructure
         public const string IdentityProvider = "http://schemas.microsoft.com/identity/claims/identityprovider";
         public const string ExtClaims = "ExtClaims";
         public const string AuthType = "AuthType";
+        public const string MemberOfGroup = "MemberOfGroup";
         public const string FullName = "FullName";
         public const string ObjectIdentifier = "http://schemas.microsoft.com/identity/claims/objectidentifier";
         public const string TenantId = "http://schemas.microsoft.com/identity/claims/tenantid";

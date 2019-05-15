@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using System.Web;
 using Microsoft.Owin.Security.Cookies;
+using B2BPortal.Common.Helpers;
+using B2BPortal.Common.Utils;
 
 namespace B2BPortal.Controllers
 {
@@ -16,7 +18,7 @@ namespace B2BPortal.Controllers
         // GET: Profile
         public async Task<ActionResult> Index()
         {
-            if (User.Identity.GetClaim("aud") != AdalUtil.Settings.AppClientId_Admin)
+            if (User.Identity.GetClaim("aud") != Settings.AppClientId_Admin)
             {
                 //the user is accessing the profile editor but they aren't using the correct application - they may 
                 //have a cached token from the previous pre-auth call. Bouncing them out to re-auth.
@@ -40,10 +42,16 @@ namespace B2BPortal.Controllers
         [HttpPost]
         public async Task<ActionResult> SignUp(GuestRequest request)
         {
+            var r = new RegexUtilities();
+            if (!r.IsValidEmail(request.EmailAddress))
+            {
+                return RedirectToAction("Index", "Home", new { area = "" });
+            }
+
             //sanity check: not trusting the passed-in preauth setting
             request.PreAuthed = (User.Identity.GetClaim(CustomClaimTypes.AuthType) == AuthTypes.B2EMulti);
 
-            var result = await GuestRequestRules.SignUpAsync(request, Utils.GetProfileUrl(Request));
+            var result = await GuestRequestRules.SignUpAsync(request, Utils.GetProfileUrl(Request.Url));
 
             return View(result);
         }

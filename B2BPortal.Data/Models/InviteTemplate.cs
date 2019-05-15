@@ -1,4 +1,5 @@
-﻿using B2BPortal.Interfaces;
+﻿using B2BPortal.Common.Interfaces;
+using B2BPortal.Data.Models;
 using Newtonsoft.Json;
 using System;
 using System.ComponentModel;
@@ -20,7 +21,7 @@ namespace B2BPortal.Data
         public string TemplateName { get; set; }
 
         /// <summary>
-        /// Name of inviting organization
+        /// Custom message added to emailed invitation
         /// </summary>
         [DisplayName("Template Content")]
         [AllowHtml]

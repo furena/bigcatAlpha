@@ -1,5 +1,12 @@
 ## Setup
 
+There are two ways to deploy this project:
+
+1. Download  [CustomDeploy.ps1][PshDeploy] to your machine and run it in PowerShell. It will create both application registrations for you, and set the necessary values in the ARM deployment. This will result in a turnkey deployment.
+2. Follow the directions below to manually create the two Azure AD application registrations, and deploy the ARM template by clicking the "Deploy to Azure" button below.
+
+#### Manual Deployment
+
 Two Azure Active Directory apps must be created in your tenant. The first is the administrative app:
 
 * Log into the Azure portal, and click on Azure Active Directory, then click on Properties
@@ -24,6 +31,7 @@ Two Azure Active Directory apps must be created in your tenant. The first is the
     * Read and write all users' full profiles
   * DELEGATED PERMISSIONS
     * Sign in and read user profile
+    * Access the directory as the signed-in user
 * Click "Select"
 
   ![alt text][App3]
@@ -33,7 +41,7 @@ Two Azure Active Directory apps must be created in your tenant. The first is the
   ![alt text][App3a]
 
 * Back on the Settings panel, click "Keys". Under Description, enter a name for the application key, like "Key 1". Under Expires, select 1 or 2 years. (NOTE: you or someone in your organization will need to make a note to come back and refresh this key before it expires.)
-* Click "Save". An application secret will be generated and displayed. COPY this key and record it - you'll need it in an minute when setting up the web application. NOTE: this key will not be displayed again and cannot be retrieved. If you lose it, you'll have to come back, delete it, and create another one.
+* Click "Save". An application secret will be generated and displayed. COPY this key and record it - you'll need it in a minute when setting up the web application. NOTE: this key will not be displayed again and cannot be retrieved. If you lose it, you'll have to come back, delete it, and create another one.
 
   ![alt text][App4]
 
@@ -98,6 +106,9 @@ Now that the app is deployed, there's a final step. We need to go back into our 
   * Now edit the reply URL:
 
     ![alt text][Url2]
+    IMPORTANT: for the reply URL for the "pre-auth" app, add an asterisk (&#42;) after the URL to account for a redirect when updating the user profile via remote sync, like 
+
+       https://<span></span>[myapp].azurewebapps.net/&#42;
   
 All done!
 
@@ -121,3 +132,4 @@ Azure App Services supports creating custom web addresses. The customization of 
 [Url]: ./DocImages/Url.png "Copy web URL"
 [Url2]: ./DocImages/Url2.png "Update reply address"
 [Url3]: ./DocImages/Url3.png "Update home page"
+[PshDeploy]: ./CustomDeploy.ps1

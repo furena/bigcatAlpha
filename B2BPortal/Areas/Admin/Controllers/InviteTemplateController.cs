@@ -4,9 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using B2BPortal.Infrastructure;
-using B2BPortal.Models;
 using B2BPortal.Infrastructure.Filters;
 using B2BPortal.Data;
+using AzureB2BInvite;
+using AzureB2BInvite.Utils;
 
 namespace B2BPortal.Areas.Admin.Controllers
 {

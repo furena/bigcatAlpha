@@ -1,0 +1,229 @@
+﻿@{
+    ViewBag.Title = "Batch Processing Status";
+}
+
+<div class="panel panel-primary" style="margin-top:20px;">
+    <div class="panel-title panel-heading">
+        <button id="btnInvite" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-envelope"></span> Invite</button>
+        <button id="btnHelp" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-question-sign"></span> Help</button>
+
+        @ViewBag.Title
+    </div>
+    <div class="panel-body">
+        <div class="form-horizontal">
+            <div class="form-group">
+                <div class="col-md-8">
+                    <label for="BatchList">Batch History</label>
+                    <div class="well">
+                        <input type="radio" id="HistoryTypeHistory" name="HistoryType" value="GetBatchHistory" checked>
+                        <label for="HistoryTypeHistory">
+                            Load
+                            <select id="HistoryDays" class="form-control" style="width:75px;display:inline;height:27px;">
+                                <option value="5">5</option>
+                                <option value="10">10</option>
+                                <option value="15">15</option>
+                                <option value="20">20</option>
+                                <option value="40">40</option>
+                                <option value="60">60</option>
+                            </select>
+                            days of history
+                        </label>
+                        <input type="radio" id="HistoryTypePending" name="HistoryType" value="GetBatchPending">
+                        <label for="HistoryTypePending">
+                            Load Pending
+                        </label>
+                        <button class="btn btn-primary pull-right" style="width:50px" type="button" id="btnReload"><span class="glyphicon glyphicon-refresh"></span></button>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-md-4">
+                    Select a batch to view details <span class="hint">(click to refresh)</span>
+                    <div class="list-group" id="BatchList"></div>
+                </div>
+                <div class="col-md-8" id="BatchDetails">
+                    <table class="table">
+                        <tr>
+                            <td>Batch ID</td>
+                            <td colspan="3" id="batchId"></td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Batch History
+                            </td>
+                            <td id="batchAttempts">
+                                N/A
+                            </td>
+                            <td colspan="2">
+                                <button class="btn btn-info btn-xs" id="btnSubmissionHistory">History</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                Items Processed
+                            </td>
+                            <td id="itemsProcessed"></td>
+                            <td>Items Submitted</td>
+                            <td id="itemsSubmitted"></td>
+                        </tr>
+                        <tr>
+                            <td>Submission Date</td>
+                            <td id="submissionDate"></td>
+                            <td>Member Type</td>
+                            <td id="memberType"></td>
+                        </tr>
+                        <tr>
+                            <td>Custom Message</td>
+                            <td colspan="3" id="invitationMessage"></td>
+                        </tr>
+                        <tr>
+                            <td>Invitees <span class="hint">(click for details)</span></td>
+                            <td colspan="3">
+                                <select class="form-control" size="5" id="invitees"></select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Group Assignments</td>
+                            <td colspan="3">
+                                <select class="form-control" size="5" id="groupAssignments"></select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="4">
+                                <button style="display:none;" class="btn btn-danger pull-right batchAction" id="btnDelete">Delete Batch</button>
+                                <button style="display:none;" class="btn btn-danger pull-right batchAction" id="btnKill">Kill Batch</button>
+                                <button style="display:none;" class="btn btn-warning pull-right " id="btnRetry">Retry Batch</button>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" tabindex="-1" role="dialog" id="inviteDetails">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li role="presentation" class="active"><a href="#request" aria-controls="request" role="tab" data-toggle="tab">Request</a></li>
+                    <li role="presentation"><a href="#response" aria-controls="response" role="tab" data-toggle="tab">Response</a></li>
+                </ul>
+                <div class="tab-content">
+                    <div role="tabpanel" class="tab-pane active" id="request"></div>
+                    <div role="tabpanel" class="tab-pane" id="response"></div>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" tabindex="-1" role="dialog" id="resultDetails">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title"></h4>
+            </div>
+            <div class="modal-body">
+
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+@Html.Partial("_statusHelp")
+
+@section scripts {
+    <script type="text/javascript" src="~/Scripts/app/BatchStatus.js"></script>
+}
+@section styles {
+    <style type="text/css">
+        div.well {
+            padding: 10px;
+        }
+
+            div.well input {
+                margin-bottom: 10px;
+                margin-left: 10px;
+            }
+
+        div.modal-body div.tab-pane {
+            overflow-y: auto;
+            height: 480px;
+            background-color: #f1f1f1;
+            border-bottom: 1px solid #bababa;
+            padding: 5px;
+        }
+
+            div.modal-body div.tab-pane div {
+                clear: both;
+                max-height: 100px;
+                overflow-y: auto;
+                border-bottom: 1px solid #bababa;
+                padding: 5px;
+            }
+
+        span.label {
+            color: #404040 !important;
+            display: inline-block;
+            width: 130px;
+            font-weight: bold;
+            float: left;
+            white-space: pre-wrap;
+            font: 10pt Segoe UI;
+            text-align: left;
+            font-weight: bold;
+            text-transform: capitalize;
+        }
+
+        span.data {
+            display: inline-block;
+            float: left;
+            width: auto;
+            font-family: Consolas, courier new;
+            font-size: 10pt;
+        }
+
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 110px !important;
+        }
+
+        span.hint {
+            font-size: .9em;
+            font-style: italic;
+        }
+        #btnSubmissionHistory {
+            width:75px;
+            margin-left:4px;
+        }
+        span.hist {
+            display: inline-block;
+            float: left;
+        }
+        span.histB {
+            cursor:pointer;
+            margin-left:6px;
+        }
+        div.showCode {
+            white-space: pre-wrap;
+            height:300px;
+            overflow:auto;
+            padding:3px;
+            font-family:Consolas, Courier New, Courier, monospace;
+        }
+        .errorDetail {
+            width:80%;
+        }
+    </style>
+}

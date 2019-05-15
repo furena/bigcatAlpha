@@ -1,8 +1,9 @@
-﻿@using B2BPortal.Infrastructure
-@model B2BPortal.Models.SiteConfig
+﻿@using AzureB2BInvite
+@using AzureB2BInvite.Models
+@model AzureB2BInvite.Models.SiteConfig
 
 @{
-    ViewBag.Title = "Site Configuration";
+    ViewBag.Title = "Edit Site Configuration";
     ViewBag.RedemptionPropertyName = "SiteRedemptionSettings";
 
     var _templates = new List<SelectListItem>();
@@ -11,7 +12,6 @@
     {
         _templates = (List<SelectListItem>)ViewBag.Templates;
     }
-
 }
 
 @using (Html.BeginForm("Save", "SiteConfig", FormMethod.Post))
@@ -19,7 +19,8 @@
     @Html.AntiForgeryToken()
     <div class="panel panel-primary" style="margin-top:20px;">
         <div class="panel-title panel-heading">
-            Edit Site Configuration
+            <button id="btnHistory" type="button" class="btn btn-xs btn-default control pull-right"><span class="glyphicon glyphicon-time"></span> History</button>
+            @ViewBag.Title
         </div>
         <div class="panel-body">
             <div class="form-horizontal">
@@ -120,10 +121,9 @@
 @section scripts {
     <script type="text/javascript">
         $(function () {
-            $("#").on("change", function () {
-
+            $("#btnHistory").on("click", function () {
+                location.href = "/Admin/SiteConfig/List";
             });
-
             $("#btnCancel").on("click", function () {
                 location.href = "/admin/";
             });
@@ -136,5 +136,9 @@
         div.redemption label {
             max-width:none;
         }
+        .btn.pull-right {
+            margin-left: 5px;
+            width: 120px !important;
+        }    
     </style>    
 }

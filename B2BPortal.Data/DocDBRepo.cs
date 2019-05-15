@@ -7,7 +7,8 @@ using Microsoft.Azure.Documents.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using System.Net;
-using B2BPortal.Interfaces;
+using B2BPortal.Common.Interfaces;
+using B2BPortal.Common.Enums;
 
 namespace B2BPortal.Data
 {
@@ -73,12 +74,19 @@ namespace B2BPortal.Data
             private static async Task<IEnumerable<T>> _getItemsAsync(IDocumentQuery<T> query)
             {
                 List<T> results = new List<T>();
-                while (query.HasMoreResults)
+                try
                 {
-                    results.AddRange(await query.ExecuteNextAsync<T>());
-                }
+                    while (query.HasMoreResults)
+                    {
+                        results.AddRange(await query.ExecuteNextAsync<T>());
+                    }
 
-                return results;
+                    return results;
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
 
             /// <summary>
@@ -116,6 +124,29 @@ namespace B2BPortal.Data
                     .Where(docTypeFilter)
                     .AsDocumentQuery();
                 return await _getItemsAsync(query);
+            }
+            public static async Task<IEnumerable<dynamic>> GetAllItemsGenericAsync()
+            {
+                var docType = (DocTypes)Enum.Parse(typeof(DocTypes), typeof(T).Name);
+
+                var query = client.CreateDocumentQuery<IDocModelBase>(baseDocCollectionUri)
+                    .Where(d => d.DocType == docType)
+                    .AsDocumentQuery();
+
+                List<dynamic> results = new List<dynamic>();
+                try
+                {
+                    while (query.HasMoreResults)
+                    {
+                        results.AddRange(await query.ExecuteNextAsync<dynamic>());
+                    }
+
+                    return results;
+                }
+                catch (Exception ex)
+                {
+                    throw ex;
+                }
             }
         }
 

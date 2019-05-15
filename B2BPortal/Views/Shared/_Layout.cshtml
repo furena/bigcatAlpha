@@ -12,7 +12,12 @@
     @Styles.Render("~/Content/css")
     @Scripts.Render("~/bundles/modernizr")
     @RenderSection("styles", required: false)
-
+    @if (User.Identity.IsAuthenticated)
+    {
+        <script type="text/javascript">
+        window.loggedInUser = "@User.Identity.Name";
+        </script>
+    }
 </head>
 <body>
     <div class="navbar navbar-inverse navbar-fixed-top">
@@ -23,6 +28,12 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
+                <span id="collapsedLoader" class="ui-loader glyphicon glyphicon-refresh glyphicon-refresh-animate"></span>
+                @if (Settings.Branding.TileLogo.Image.Length > 0)
+                {
+                    <img style="width:50px;margin-right:4px;" class="pull-left" src="/home/branding/3" />
+                }
+
                 @Html.ActionLink(siteName, "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
             </div>
             <div class="navbar-collapse collapse">
@@ -30,7 +41,7 @@
                     <li>@Html.ActionLink("Sign Up", "Index", "Home", new { area = "" }, new { })</li>
                     <li>@Html.ActionLink("About", "About", "Home", new { area = "" }, new { })</li>
                     <li>@Html.ActionLink("Contact", "Contact", "Home", new { area = "" }, new { })</li>
-                    @if (User.Identity.IsInAnyRole(AdalUtil.Settings.InviterRoleNames))
+                    @if (User.Identity.IsInAnyRole(Settings.InviterRoleNames))
                     {
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Admin <span class="caret"></span></a>
@@ -38,6 +49,7 @@
                             <li><a href="@Url.Action("Index", "Home", new { area="admin" })"><span class='glyphicon glyphicon-ok pull-left'></span> Approve Requests</a></li>
                             <li><a href="@Url.Action("Index", "PreApproval", new { area="admin" })"><span class='glyphicon glyphicon-heart pull-left'></span> Manage Domains</a></li>
                             <li><a href="@Url.Action("Index", "InviteTemplate", new { area="admin" })"><span class='glyphicon glyphicon-envelope pull-left'></span> Manage Mail Templates</a></li>
+                            <li><a href="@Url.Action("Index", "BulkInvite", new { area = "admin" })"><span class='glyphicon glyphicon-user pull-left'></span> Batch Invitations</a></li>
                             <li class="divider"></li>
                             <li><a href="@Url.Action("Index", "SiteConfig", new { area="admin" })"><span class='glyphicon glyphicon-cog pull-left'></span> Site Config</a></li>
                         </ul>
@@ -48,6 +60,7 @@
             </div>
         </div>
     </div>
+
     <div class="container body-content">
         @RenderBody()
     </div>

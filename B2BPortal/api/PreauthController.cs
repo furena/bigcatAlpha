@@ -1,5 +1,8 @@
 ﻿using AzureB2BInvite;
+using AzureB2BInvite.Models;
 using AzureB2BInvite.Rules;
+using B2BPortal.Common.Models;
+using B2BPortal.Infrastructure.Filters;
 using Microsoft.Graph;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,6 +11,7 @@ using System.Web.Http;
 
 namespace B2BPortal.api
 {
+    [AuthorizedInviter]
     public class PreauthController : ApiController
     {
         [HttpPost]
@@ -26,12 +30,11 @@ namespace B2BPortal.api
         }
 
         [HttpGet]
-        public async Task<IEnumerable<dynamic>> GetAADGroupList(string filter)
+        public async Task<IEnumerable<GroupObject>> GetAADGroupList(string filter)
         {
             var groups = await new GraphUtil().GetGroups(filter);
-            return groups.Select(g => new { g.DisplayName, g.Id });
+            return groups;
         }
-
     }
     public class PreAuthReq
     {

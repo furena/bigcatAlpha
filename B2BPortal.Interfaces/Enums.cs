@@ -13,16 +13,18 @@ namespace B2BPortal.Interfaces
         PreAuthDomain,
         GuestRequest,
         SiteConfig,
-        InviteTemplate
+        InviteTemplate,
+        PerWebUserCache,
+        BulkInviteSubmission
     }
 
     /// <summary>
     /// List of possible guest request approval choices:
     ///     Approved     - request has been manually approved
-    ///     AutoApproved - request approved via preauth match OR webjob batch processing
+    ///     AutoApproved - request approved via preauth match OR batch processing
     ///     Denied       - request manually denied
     ///     Pending      - request has been queued for manual review
-    ///     QueuePending - request(s) were uploaded by a guest inviter in the admin portal for webjob batch processing
+    ///     QueuePending - request(s) were uploaded by a guest inviter in the admin portal for batch processing
     /// </summary>
     public enum Disposition
     {
@@ -31,5 +33,10 @@ namespace B2BPortal.Interfaces
         Denied,
         Pending,
         QueuePending
+    }
+    public enum MemberType
+    {
+        Guest,
+        Member
     }
 }

@@ -5,6 +5,7 @@ using System.Web;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Diagnostics;
+using B2BPortal.Common.Utils;
 
 namespace B2BPortal.Infrastructure
 {
